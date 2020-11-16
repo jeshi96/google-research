@@ -91,7 +91,7 @@ double ClusteringHelper::ComputeObjective(
 
   auto resolution_seq = pbbs::delayed_seq<double>(graph.n, [&](std::size_t i) {
     auto cluster_weight = cluster_weights_[cluster_ids_[i]];
-    return node_weights_[i] * (cluster_weight - node_weights_[i]);
+    return node_weights_[i] * (cluster_weight);// - node_weights_[i]);
   });
   objective -= config.resolution() * pbbslib::reduce_add(resolution_seq) / 2;
 

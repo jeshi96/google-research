@@ -9,6 +9,7 @@ cc_library(
     deps = [
         ":parallel-affinity",
         ":parallel-correlation-clusterer",
+        ":parallel-modularity-clusterer",
     ],
     alwayslink = 1,
 )
@@ -38,6 +39,25 @@ cc_library(
     hdrs = ["parallel-correlation-clusterer.h"],
     deps = [
         ":parallel-correlation-clusterer-internal",
+        "//clustering:config_cc_proto",
+        "//clustering:gbbs-graph",
+        "//clustering:in-memory-clusterer",
+        "//clustering:status_macros",
+        "//parallel:parallel-graph-utils",
+        "@com_google_absl//absl/base",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status:statusor",
+        "@gbbs//benchmarks/Connectivity/WorkEfficientSDB14:Connectivity",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "parallel-modularity-clusterer",
+    srcs = ["parallel-modularity-clusterer.cc"],
+    hdrs = ["parallel-modularity-clusterer.h"],
+    deps = [
+        ":parallel-correlation-clusterer",
         "//clustering:config_cc_proto",
         "//clustering:gbbs-graph",
         "//clustering:in-memory-clusterer",

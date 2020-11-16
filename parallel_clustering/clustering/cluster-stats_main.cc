@@ -25,8 +25,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
-#include "clustering/clusterers/parallel-affinity.h"
-#include "clustering/clusterers/parallel-correlation-clusterer.h"
 #include "clustering/clusterers/parallel-modularity-clusterer.h"
 #include "clustering/config.pb.h"
 #include "clustering/in-memory-clusterer.h"
@@ -34,19 +32,12 @@
 #include "external/gbbs/gbbs/edge_map_blocked.h"
 #include "google/protobuf/text_format.h"
 
-ABSL_FLAG(std::string, clusterer_name, "",
-          "Name of a clusterer (ParallelAffinityClusterer or "
-          "ParallelCorrelationClusterer or ParallelModularityClusterer.");
-
 ABSL_FLAG(std::string, clusterer_config, "",
           "Text-format research_graph.in_memory.ClustererConfig proto.");
 
 ABSL_FLAG(std::string, input_graph, "",
           "Input file pattern of a graph. Should be in edge list format "
           "(SNAP format).");
-
-ABSL_FLAG(std::string, output_clustering, "",
-          "Output filename of a clustering.");
 
 ABSL_FLAG(bool, is_symmetric_graph, true,
           "Without this flag, the program expects the edge list to represent "
@@ -60,6 +51,8 @@ ABSL_FLAG(bool, float_weighted, false,
 
 ABSL_FLAG(std::string, input_communities, "",
           "Input file pattern of a list of communities; tab separated nodes, lines separating communities.");
+
+ABSL_FLAG(std::string, input_clusters, "", "");
 
 namespace research_graph {
 namespace in_memory {
@@ -224,8 +217,6 @@ struct FakeGraph {
 };
 
 absl::Status Main() {
-  std::string clusterer_name = absl::GetFlag(FLAGS_clusterer_name);
-
   ClustererConfig config;
   std::string clusterer_config = absl::GetFlag(FLAGS_clusterer_config);
   if (!google::protobuf::TextFormat::ParseFromString(clusterer_config,
@@ -236,18 +227,9 @@ absl::Status Main() {
                         clusterer_config));
   }
 
-  std::unique_ptr<InMemoryClusterer> clusterer;
-  if (clusterer_name == "ParallelAffinityClusterer") {
-    clusterer.reset(new ParallelAffinityClusterer);
-  } else if (clusterer_name == "ParallelCorrelationClusterer") {
-    clusterer.reset(new ParallelCorrelationClusterer);
-  } else if (clusterer_name == "ParallelModularityClusterer") {
-    clusterer.reset(new ParallelModularityClusterer);
-  } else {
-    return absl::UnimplementedError(
-        "ParallelAffinityClusterer, ParallelCorrelationClusterer, and "
-        "ParallelModularityClusterer are the only supported clusterers.");
-  }
+  std::unique_ptr<ParallelModularityClusterer> clusterer;
+  clusterer.reset(new ParallelModularityClusterer);
+
 auto begin_read = std::chrono::steady_clock::now();
   std::string input_file = absl::GetFlag(FLAGS_input_graph);
   bool is_symmetric_graph = absl::GetFlag(FLAGS_is_symmetric_graph);
@@ -270,19 +252,23 @@ PrintTime(begin_read, end_read, "Read");
   // The list allocator seeds using the number of vertices in the input graph.
   FakeGraph fake_graph{n};
   gbbs::alloc_init(fake_graph);
-auto begin_cluster = std::chrono::steady_clock::now();
-  InMemoryClusterer::Clustering clustering;
-  ASSIGN_OR_RETURN(clustering, clusterer->Cluster(config));
-auto end_cluster = std::chrono::steady_clock::now();
-PrintTime(begin_cluster, end_cluster, "Cluster");
+
+//auto begin_cluster = std::chrono::steady_clock::now();
+//  InMemoryClusterer::Clustering clustering;
+//  ASSIGN_OR_RETURN(clustering, clusterer->Cluster(config));
+//auto end_cluster = std::chrono::steady_clock::now();
+//PrintTime(begin_cluster, end_cluster, "Cluster");
+
+  std::string input_clusters = absl::GetFlag(FLAGS_input_clusters);
+  std::vector<std::vector<int>> clustering;
+  ReadCommunities(input_clusters.c_str(), clustering);
+  double modularity = clusterer->ComputeModularity2(config, &clustering);
+  std::cout << "Modularity: " << modularity << std::endl;
 
   std::string input_communities = absl::GetFlag(FLAGS_input_communities);
   if (!input_communities.empty()) CompareCommunities(input_communities.c_str(), clustering);
 
   gbbs::alloc_finish();
-
-  std::string output_file = absl::GetFlag(FLAGS_output_clustering);
-  if (!output_file.empty()) WriteClustering(output_file.c_str(), clustering);
 
   return absl::OkStatus();
 }

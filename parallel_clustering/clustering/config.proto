@@ -126,6 +126,14 @@ message CorrelationClustererConfig {
   }
   optional ClusteringMovesMethod clustering_moves_method = 9
       [default = DEFAULT_CLUSTER_MOVES];
+  
+  enum SubclusteringMethod {
+    NONE = 0;
+    TRIANGLE = 1;
+    CONNECTIVITY = 2;
+  }
+  optional SubclusteringMethod subclustering_method = 10
+      [default = NONE];
 }
 
 // This config is for clustering using the Louvain algorithm, where the

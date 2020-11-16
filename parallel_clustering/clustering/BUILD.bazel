@@ -31,6 +31,35 @@ cc_binary(
     ],
 )
 
+cc_library(
+    name = "cluster-stats_main_lib",
+    srcs = ["cluster-stats_main.cc"],
+    deps = [
+        ":config_cc_proto",
+        ":in-memory-clusterer",
+        "//clustering/clusterers:all-clusterers",
+        "//external:gflags",
+        "@com_google_absl//absl/base",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_protobuf//:protobuf",
+        "@gbbs//gbbs:edge_map_blocked",
+    ],
+)
+
+cc_binary(
+    name = "cluster-stats_main",
+    deps = [
+        "cluster-stats_main_lib",
+        "//clustering/clusterers:all-clusterers",
+        "//external:gflags",
+    ],
+)
+
 proto_library(
     name = "config_proto",
     srcs = [
