@@ -59,9 +59,9 @@ double resolution){
       auto vtx = graph.get_vertex(vtx_id);
       degree += vtx.getOutDegree();
     }
-    modularity -= (resolution * degree * degree) / total_edge_weight;
+    modularity -= (resolution * degree * degree) / (total_edge_weight);
   }
-  modularity = modularity / total_edge_weight;
+  modularity = modularity / (total_edge_weight);
   return modularity;
 }
 

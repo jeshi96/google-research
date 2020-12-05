@@ -105,6 +105,14 @@ class ClusteringHelper {
   std::tuple<ClusteringHelper::ClusterId, double> BestMove(
       gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& graph,
       const std::vector<gbbs::uintE>& moving_nodes);
+  
+  std::tuple<ClusteringHelper::ClusterId, double> EfficientBestMove(
+    gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& graph,
+    InMemoryClusterer::NodeId moving_node);
+  
+  bool AsyncMove(
+    gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& graph,
+    InMemoryClusterer::NodeId moving_node);
 
   // Returns a tuple of:
   //  * The best cluster to move moving_node to according to the correlation

@@ -292,9 +292,14 @@ BestMovesForVertexSubset(
                                                                  absl::nullopt);
 
   // Find best moves per vertex in moved_subset
+  //auto moved_clusters = absl::make_unique<bool[]>(current_graph->n);
+  //pbbs::parallel_for(0, current_graph->n,
+  //                   [&](std::size_t i) { moved_clusters[i] = false; });
   gbbs::vertexMap(*moved_subset, [&](std::size_t i) {
+  //for (std::size_t i = 0; i < current_graph->n; i++) {
+    //moved_clusters[i] = helper->AsyncMove(*current_graph, i);
     std::tuple<ClusteringHelper::ClusterId, double> best_move =
-        helper->BestMove(*current_graph, i);
+        helper->EfficientBestMove(*current_graph, i);
     // If a singleton cluster wishes to move to another singleton cluster,
     // only move if the id of the moving cluster is lower than the id
     // of the cluster it wishes to move to
@@ -307,6 +312,7 @@ BestMovesForVertexSubset(
       best_move = std::make_tuple(current_cluster_id, 0);
     }
     if (std::get<1>(best_move) > 0) moves[i] = std::get<0>(best_move);
+  //}
   });
 
   // Compute modified clusters
@@ -481,16 +487,16 @@ absl::Status ParallelCorrelationClusterer::RefineClusters(
     case CorrelationClustererConfig::DEFAULT_CLUSTER_MOVES:
       num_iterations = 1;
       num_inner_iterations =
-          config.num_iterations() > 0 ? config.num_iterations() : 10;
+          config.num_iterations() > 0 ? config.num_iterations() : 32;
       break;
     case CorrelationClustererConfig::LOUVAIN:
       num_iterations = config.louvain_config().num_iterations() > 0
                            ? config.louvain_config().num_iterations()
-                           : 10;
+                           : 32;
       num_inner_iterations =
           config.louvain_config().num_inner_iterations() > 0
               ? config.louvain_config().num_inner_iterations()
-              : 10;
+              : 32;
       break;
     default:
       return absl::UnimplementedError(
@@ -559,19 +565,23 @@ absl::Status ParallelCorrelationClusterer::RefineClusters(
       double curr_objective = helper->ComputeObjective(*current_graph);
 
       // Update maximum objective
-      if (curr_objective > max_objective) {
-        pbbs::parallel_for(0, num_nodes, [&](std::size_t i) {
-          local_cluster_ids[i] = helper->ClusterIds()[i];
-        });
+      //if (curr_objective > max_objective) {
+        //pbbs::parallel_for(0, num_nodes, [&](std::size_t i) {
+        //  local_cluster_ids[i] = helper->ClusterIds()[i];
+        //});
         max_objective = curr_objective;
         moved |= local_moved;
-      }
+      //}
       //if (prev_objective == curr_objective || abs(curr_objective - prev_objective) / current_graph->m < 0.0001)
       //  break;
       //prev_objective = curr_objective;
 std::cout << "Curr: " << curr_objective << std::endl;
 std::cout << "Max: " << max_objective << std::endl;
     }
+
+    pbbs::parallel_for(0, num_nodes, [&](std::size_t i) {
+      local_cluster_ids[i] = helper->ClusterIds()[i];
+    });
 
     // If no moves can be made at all, exit
     if (!moved) break;

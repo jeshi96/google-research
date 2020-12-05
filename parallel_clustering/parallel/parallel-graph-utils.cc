@@ -91,8 +91,16 @@ RetrieveInterClusterEdges(
     if (cluster_ids[j] != UINT_E_MAX) {
       auto map_f = [&](gbbs::uintE u, gbbs::uintE v, float weight) {
         if (is_valid_func(cluster_ids[v], cluster_ids[u]) &&
-            cluster_ids[v] != UINT_E_MAX &&
-            (v <= u || cluster_ids[v] != cluster_ids[u]))
+            cluster_ids[v] != UINT_E_MAX 
+            // TODO: they do this line, which doesn't double count self loops
+            // but somehow if we do double count self loops, it makes us match
+            // their modularity better?
+            // ah our volume of a supernode is off depending on this --
+            // volume is taken to be the sum, which does double count self loops
+            // so if we want to match PLM, we have to subtract weight of
+            // self loop from weight of supernode, and put this line back in.
+            && (v <= u || cluster_ids[v] != cluster_ids[u])
+            )
           all_edges[all_offsets_scan.first[j] + i] =
               std::make_tuple(cluster_ids[u], cluster_ids[v], weight);
         i++;
@@ -111,6 +119,30 @@ RetrieveInterClusterEdges(
             return std::get<0>(x) != UINT_E_MAX && std::get<1>(x) != UINT_E_MAX;
           });
   return filtered_edges;
+}
+
+std::vector<std::tuple<gbbs::uintE, gbbs::uintE, float>>
+RetrieveInterClusterEdgesSERIAL(
+    gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& original_graph,
+    const std::vector<gbbs::uintE>& cluster_ids,
+    const std::function<bool(gbbs::uintE, gbbs::uintE)>& is_valid_func) {
+  std::vector<std::tuple<gbbs::uintE, gbbs::uintE, float>> all_edges(
+      original_graph.m, std::make_tuple(UINT_E_MAX, UINT_E_MAX, float{0}));
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < original_graph.n; i ++) {
+    auto vtx = original_graph.get_vertex(i);
+    auto nbhrs = vtx.getOutNeighbors();
+    for (std::size_t j = 0; j < vtx.getOutDegree(); j++) {
+      auto nbhr = std::get<0>(nbhrs[j]);
+      auto wgh = std::get<1>(nbhrs[j]);
+      if (nbhr <= i || cluster_ids[nbhr] != cluster_ids[i]) {
+        all_edges[k] = std::make_tuple(cluster_ids[i], cluster_ids[nbhr], wgh);
+        k++;
+      }
+    }
+  }
+  all_edges.resize(k);
+  return all_edges;
 }
 
 }  // namespace
@@ -140,6 +172,35 @@ OffsetsEdges ComputeInterClusterEdgesSort(
           std::tuple<gbbs::uintE, gbbs::uintE, float> b) {
         return get_endpoints(a) < get_endpoints(b);
       });
+  
+  /*gbbs::uintE prev_u = std::get<0>(inter_cluster_edges_sort[0]);
+  gbbs::uintE prev_v = std::get<1>(inter_cluster_edges_sort[0]);
+  float wgh = std::get<2>(inter_cluster_edges_sort[0]);
+  std::size_t l = 0;
+  std::unique_ptr<std::tuple<gbbs::uintE, float>[]> edges(
+      new std::tuple<gbbs::uintE, float>[inter_cluster_edges_sort.size()]);
+  std::vector<gbbs::uintE> offsets(num_compressed_vertices + 1);
+  offsets[0] = 0;
+  for (std::size_t i = 1; i < inter_cluster_edges_sort.size(); i++) {
+    if (prev_u == std::get<0>(inter_cluster_edges_sort[i]) && 
+      prev_v == std::get<1>(inter_cluster_edges_sort[i])) {
+        wgh += std::get<2>(inter_cluster_edges_sort[i]);
+      } else {
+        edges[l] = std::make_tuple(prev_v, wgh);
+        //edges_for_offsets[l] = prev_u;
+        l++;
+        for (std::size_t k = prev_u +1 ; k <=std::get<0>(inter_cluster_edges_sort[i]); k++ ) {
+          offsets[k] = l;
+        }
+        prev_u = std::get<0>(inter_cluster_edges_sort[i]);
+        prev_v = std::get<1>(inter_cluster_edges_sort[i]);
+        wgh = std::get<2>(inter_cluster_edges_sort[i]);
+      }
+  }
+  for (std::size_t k = prev_u + 1 ; k <= num_compressed_vertices; k++) {
+    offsets[k] = l;
+  }
+  std::size_t num_filtered_mark_edges = l;*/
 
   std::vector<gbbs::uintE> filtered_mark_edges =
       research_graph::parallel::GetBoundaryIndices<gbbs::uintE>(
@@ -164,6 +225,10 @@ OffsetsEdges ComputeInterClusterEdgesSort(
     // Combine edges from start_edge_index to end_edge_index
     gbbs::uintE start_edge_index = filtered_mark_edges[i];
     gbbs::uintE end_edge_index = filtered_mark_edges[i + 1];
+    /*float weight = 0;
+    for (std::size_t k = start_edge_index; k < end_edge_index; k++) {
+      weight += std::get<2>(inter_cluster_edges_sort[k]);
+    }*/
     float weight = std::get<2>(research_graph::parallel::Reduce<
                                std::tuple<gbbs::uintE, gbbs::uintE, float>>(
         absl::Span<const std::tuple<gbbs::uintE, gbbs::uintE, float>>(

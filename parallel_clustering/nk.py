@@ -20,7 +20,7 @@ def main():
       plm = plmCommunities.getMembers(i)
       for p in plm:
         print(str(p),end='\t',flush=True,file=fp)
-      print(file=fp)
+      print(flush=True,file=fp)
   # input snap communities
   # input_comm = sys.argv[2]
   # comms = []
