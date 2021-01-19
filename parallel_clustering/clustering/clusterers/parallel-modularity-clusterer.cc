@@ -68,38 +68,19 @@ double resolution){
 absl::Status ParallelModularityClusterer::RefineClusters(
     const ClustererConfig& clusterer_config2,
     InMemoryClusterer::Clustering* initial_clustering) const {
+  std::cout << "Begin modularity" << std::endl;
+  fflush(stdout);
   // TODO: we just use correlation config
   const auto& config = clusterer_config2.correlation_clusterer_config();
+  auto modularity_config= ComputeModularityConfig(graph_.Graph(), config.resolution());
 
   ClustererConfig clusterer_config;
-  std::size_t total_edge_weight = 0;
-  std::vector<double> node_weights(graph_.Graph()->n);
-  for (std::size_t i = 0; i < graph_.Graph()->n; i++) {
-    auto vtx = graph_.Graph()->get_vertex(i);
-    auto wgh = vtx.getOutDegree();
-    // TODO: this assumes unit edge weights
-    total_edge_weight += wgh;
-    node_weights[i] = wgh;
-  }
-  double resolution = config.resolution() / (total_edge_weight);
-  clusterer_config.mutable_correlation_clusterer_config()->set_resolution(resolution);
+  clusterer_config.CopyFrom(clusterer_config2);
+  clusterer_config.mutable_correlation_clusterer_config()->set_resolution(std::get<1>(modularity_config));
   clusterer_config.mutable_correlation_clusterer_config()->set_edge_weight_offset(0);
-  clusterer_config.mutable_correlation_clusterer_config()->set_clustering_moves_method(
-    clusterer_config2.correlation_clusterer_config().clustering_moves_method()
-  );
-  clusterer_config.mutable_correlation_clusterer_config()->set_subclustering_method(
-    clusterer_config2.correlation_clusterer_config().subclustering_method()
-  );
-
-  //ParallelCorrelationClusterer correlation_clusterer;
-  //auto graph = correlation_clusterer.MutableGraph();
-  //graph = &graph_;
-
-  //auto status = correlation_clusterer.RefineClusters(clusterer_config, initial_clustering,
-  //  std::move(node_weights));
 
   auto status = ParallelCorrelationClusterer::RefineClusters(clusterer_config, initial_clustering,
-    node_weights);
+    std::get<0>(modularity_config), config.resolution());
 
   std::vector<gbbs::uintE> cluster_ids(graph_.Graph()->n);
   for (std::size_t i = 0; i < initial_clustering->size(); i++) {
@@ -109,7 +90,7 @@ absl::Status ParallelModularityClusterer::RefineClusters(
   }
 
   double modularity = ComputeModularity(*initial_clustering,
-    *graph_.Graph(), total_edge_weight, cluster_ids, config.resolution());
+    *graph_.Graph(), std::get<2>(modularity_config), cluster_ids, config.resolution());
   std::cout << "Modularity: " << modularity << std::endl;
 
   return absl::OkStatus();

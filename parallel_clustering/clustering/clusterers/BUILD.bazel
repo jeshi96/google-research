@@ -47,7 +47,7 @@ cc_library(
         "@com_google_absl//absl/base",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status:statusor",
-        "@gbbs//benchmarks/Connectivity/WorkEfficientSDB14:Connectivity",
+        "@gbbs//benchmarks/KCore/JulienneDBS17:KCore",
     ],
     alwayslink = 1,
 )
@@ -130,5 +130,6 @@ cc_library(
         "@gbbs//pbbslib:seq",
         "@gbbs//pbbslib:sequence_ops",
         "@gbbs//pbbslib:utilities",
+        "@gbbs//benchmarks/Connectivity/WorkEfficientSDB14:Connectivity",
     ],
 )

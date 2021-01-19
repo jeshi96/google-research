@@ -113,6 +113,10 @@ class ClusteringHelper {
   bool AsyncMove(
     gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& graph,
     InMemoryClusterer::NodeId moving_node);
+  
+  bool AsyncMove(
+    gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& graph,
+    const std::vector<gbbs::uintE>& moving_nodes);
 
   // Returns a tuple of:
   //  * The best cluster to move moving_node to according to the correlation
@@ -137,6 +141,12 @@ class ClusteringHelper {
   // Returns the weight of the given node, or 1.0 if it has not been set.
   double NodeWeight(InMemoryClusterer::NodeId id) const;
 
+  // Initialize cluster_ids_ and cluster_sizes_ given an initial clustering.
+  // If clustering is empty, initialize singleton clusters.
+  void SetClustering(const InMemoryClusterer::Clustering& clustering);
+
+  void ResetClustering(const InMemoryClusterer::Clustering& clustering);
+
  private:
   std::size_t num_nodes_;
   std::vector<ClusterId> cluster_ids_;
@@ -144,10 +154,6 @@ class ClusteringHelper {
   ClustererConfig clusterer_config_;
   std::vector<double> node_weights_;
   std::vector<double> cluster_weights_;
-
-  // Initialize cluster_ids_ and cluster_sizes_ given an initial clustering.
-  // If clustering is empty, initialize singleton clusters.
-  void SetClustering(const InMemoryClusterer::Clustering& clustering);
 };
 
 // Holds a GBBS graph and a corresponding node weights
@@ -169,6 +175,21 @@ struct GraphWithWeights {
 absl::StatusOr<GraphWithWeights> CompressGraph(
     gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& original_graph,
     const std::vector<gbbs::uintE>& cluster_ids, ClusteringHelper* helper);
+
+struct CorrelationClustererSubclustering {
+  gbbs::sequence<gbbs::uintE> degrees = gbbs::sequence<gbbs::uintE>(0, [](std::size_t i) { return 0; });
+  gbbs::sequence<double> triangle_counts = gbbs::sequence<double>(0, [](std::size_t i){ return 0; });
+  bool use_triangle = false;
+
+  CorrelationClustererSubclustering(const ClustererConfig& clusterer_config,
+    gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph);
+};
+
+std::size_t ComputeSubcluster(std::vector<ClusteringHelper::ClusterId>& subcluster_ids,
+  std::size_t next_id, std::vector<gbbs::uintE>& cluster,
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph,
+  CorrelationClustererSubclustering& subclustering,
+  std::vector<gbbs::uintE> all_cluster_ids, const ClustererConfig& clusterer_config);
 
 }  // namespace in_memory
 }  // namespace research_graph

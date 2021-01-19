@@ -121,31 +121,23 @@ RetrieveInterClusterEdges(
   return filtered_edges;
 }
 
-std::vector<std::tuple<gbbs::uintE, gbbs::uintE, float>>
-RetrieveInterClusterEdgesSERIAL(
-    gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& original_graph,
-    const std::vector<gbbs::uintE>& cluster_ids,
-    const std::function<bool(gbbs::uintE, gbbs::uintE)>& is_valid_func) {
-  std::vector<std::tuple<gbbs::uintE, gbbs::uintE, float>> all_edges(
-      original_graph.m, std::make_tuple(UINT_E_MAX, UINT_E_MAX, float{0}));
-  std::size_t k = 0;
-  for (std::size_t i = 0; i < original_graph.n; i ++) {
-    auto vtx = original_graph.get_vertex(i);
-    auto nbhrs = vtx.getOutNeighbors();
-    for (std::size_t j = 0; j < vtx.getOutDegree(); j++) {
-      auto nbhr = std::get<0>(nbhrs[j]);
-      auto wgh = std::get<1>(nbhrs[j]);
-      if (nbhr <= i || cluster_ids[nbhr] != cluster_ids[i]) {
-        all_edges[k] = std::make_tuple(cluster_ids[i], cluster_ids[nbhr], wgh);
-        k++;
-      }
-    }
+}  // namespace
+
+std::tuple<std::vector<double>, double, std::size_t> ComputeModularityConfig(
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph, double resolution){
+  std::size_t total_edge_weight = 0;
+  std::vector<double> node_weights(graph->n);
+  for (std::size_t i = 0; i < graph->n; i++) {
+    auto vtx = graph->get_vertex(i);
+    auto wgh = vtx.getOutDegree();
+    // TODO: this assumes unit edge weights
+    total_edge_weight += wgh;
+    node_weights[i] = wgh;
   }
-  all_edges.resize(k);
-  return all_edges;
+  double new_resolution = resolution / total_edge_weight;
+  return std::make_tuple(node_weights, new_resolution, total_edge_weight);
 }
 
-}  // namespace
 
 OffsetsEdges ComputeInterClusterEdgesSort(
     gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& original_graph,
@@ -172,35 +164,6 @@ OffsetsEdges ComputeInterClusterEdgesSort(
           std::tuple<gbbs::uintE, gbbs::uintE, float> b) {
         return get_endpoints(a) < get_endpoints(b);
       });
-  
-  /*gbbs::uintE prev_u = std::get<0>(inter_cluster_edges_sort[0]);
-  gbbs::uintE prev_v = std::get<1>(inter_cluster_edges_sort[0]);
-  float wgh = std::get<2>(inter_cluster_edges_sort[0]);
-  std::size_t l = 0;
-  std::unique_ptr<std::tuple<gbbs::uintE, float>[]> edges(
-      new std::tuple<gbbs::uintE, float>[inter_cluster_edges_sort.size()]);
-  std::vector<gbbs::uintE> offsets(num_compressed_vertices + 1);
-  offsets[0] = 0;
-  for (std::size_t i = 1; i < inter_cluster_edges_sort.size(); i++) {
-    if (prev_u == std::get<0>(inter_cluster_edges_sort[i]) && 
-      prev_v == std::get<1>(inter_cluster_edges_sort[i])) {
-        wgh += std::get<2>(inter_cluster_edges_sort[i]);
-      } else {
-        edges[l] = std::make_tuple(prev_v, wgh);
-        //edges_for_offsets[l] = prev_u;
-        l++;
-        for (std::size_t k = prev_u +1 ; k <=std::get<0>(inter_cluster_edges_sort[i]); k++ ) {
-          offsets[k] = l;
-        }
-        prev_u = std::get<0>(inter_cluster_edges_sort[i]);
-        prev_v = std::get<1>(inter_cluster_edges_sort[i]);
-        wgh = std::get<2>(inter_cluster_edges_sort[i]);
-      }
-  }
-  for (std::size_t k = prev_u + 1 ; k <= num_compressed_vertices; k++) {
-    offsets[k] = l;
-  }
-  std::size_t num_filtered_mark_edges = l;*/
 
   std::vector<gbbs::uintE> filtered_mark_edges =
       research_graph::parallel::GetBoundaryIndices<gbbs::uintE>(

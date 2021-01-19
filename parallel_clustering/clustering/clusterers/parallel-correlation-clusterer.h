@@ -54,10 +54,39 @@ class ParallelCorrelationClusterer : public InMemoryClusterer {
   // [0, MutableGraph().NumNodes()) exactly once.
   absl::Status RefineClusters(const ClustererConfig& clusterer_config,
                               Clustering* initial_clustering) const override;
+  
+  absl::Status RefineClusters(
+    const ClustererConfig& clusterer_config,
+    InMemoryClusterer::Clustering* initial_clustering,
+    gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph) const;
 
   absl::Status RefineClusters(const ClustererConfig& clusterer_config,
                               Clustering* initial_clustering,
+                              std::vector<double> node_weights, double resolution = 0) const;
+
+  absl::Status RefineClusters(
+    const ClustererConfig& clusterer_config,
+    InMemoryClusterer::Clustering* initial_clustering,
+    std::vector<double> node_weights,
+    gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph, double original_resolution = 0) const;
+
+  absl::Status RefineClusters_subroutine(const ClustererConfig& clusterer_config,
+                              Clustering* initial_clustering) const;
+  
+  absl::Status RefineClusters_subroutine(
+    const ClustererConfig& clusterer_config,
+    InMemoryClusterer::Clustering* initial_clustering,
+    gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph) const;
+
+  absl::Status RefineClusters_subroutine(const ClustererConfig& clusterer_config,
+                              Clustering* initial_clustering,
                               std::vector<double> node_weights) const;
+  
+  absl::Status RefineClusters_subroutine(
+    const ClustererConfig& clusterer_config,
+    InMemoryClusterer::Clustering* initial_clustering,
+    std::vector<double> node_weights,
+    gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph) const;
 
  protected:
   GbbsGraph graph_;

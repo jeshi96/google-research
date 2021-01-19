@@ -41,6 +41,9 @@ std::vector<gbbs::uintE> GetOffsets(
     const std::function<gbbs::uintE(std::size_t)>& get_key,
     gbbs::uintE num_keys, std::size_t n);
 
+std::tuple<std::vector<double>, double, std::size_t> ComputeModularityConfig(
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph, double resolution);
+
 // Using parallel sorting, compute inter cluster edges given a set of
 // cluster_ids that form the vertices of the new graph. Uses aggregate_func
 // to combine multiple edges on the same cluster ids. Returns sorted
