@@ -29,6 +29,9 @@
 #include "clustering/status_macros.h"
 
 #include "external/gbbs/benchmarks/KCore/JulienneDBS17/KCore.h"
+#include "external/gbbs/gbbs/pbbslib/sparse_additive_map.h"
+#include "external/gbbs/pbbslib/random_shuffle.h"
+//#include "external/gbbs/pbbslib/union_find.h"
 
 namespace research_graph {
 namespace in_memory {
@@ -70,6 +73,13 @@ BestMovesForVertexSubset(
   bool async = clusterer_config.correlation_clusterer_config().async();
   std::vector<absl::optional<ClusteringHelper::ClusterId>> moves(num_nodes,
                                                                  absl::nullopt);
+  std::vector<double> moves_obj(num_nodes, 0);
+
+  //pbbs::sequence<char> moves_bool(moved_subset->size(), [&](std::size_t i){
+  //  if (i > ((double) moved_subset->size()) / 2.0) return 1;
+  //  return 0;
+  //});
+  //auto moves_bool_shuffle = pbbs::random_shuffle(moves_bool.slice());
 
   // Find best moves per vertex in moved_subset
   auto moved_clusters = absl::make_unique<bool[]>(current_graph->n);
@@ -79,7 +89,7 @@ BestMovesForVertexSubset(
   //for (std::size_t i = 0; i < current_graph->n; i++) {
     if (async) {
       moved_clusters[i] = helper->AsyncMove(*current_graph, i);
-    } else {
+    } else {//if (moves_bool_shuffle[i] == 1){
     std::tuple<ClusteringHelper::ClusterId, double> best_move =
         helper->EfficientBestMove(*current_graph, i);
     // If a singleton cluster wishes to move to another singleton cluster,
@@ -93,12 +103,45 @@ BestMovesForVertexSubset(
         current_cluster_id >= move_cluster_id) {
       best_move = std::make_tuple(current_cluster_id, 0);
     }
-    if (std::get<1>(best_move) > 0) moves[i] = std::get<0>(best_move);
+    if (std::get<1>(best_move) > 0) {
+      moves[i] = std::get<0>(best_move);
+      moves_obj[i] = std::get<1>(best_move);
+    }
     }
   });
 
   // Compute modified clusters
-  if (!async) moved_clusters = helper->MoveNodesToCluster(moves);
+  if (!async) {
+    moved_clusters = helper->MoveNodesToCluster(moves);//, moves_obj, current_graph);
+    /*pbbs::parallel_for(0, num_nodes,
+                       [&](std::size_t i) { moves[i] = absl::nullopt; });
+    gbbs::vertexMap(*moved_subset, [&](std::size_t i) {
+  //for (std::size_t i = 0; i < current_graph->n; i++) {
+      if (moves_bool_shuffle[i] != 1){
+      std::tuple<ClusteringHelper::ClusterId, double> best_move =
+        helper->EfficientBestMove(*current_graph, i);
+    // If a singleton cluster wishes to move to another singleton cluster,
+    // only move if the id of the moving cluster is lower than the id
+    // of the cluster it wishes to move to
+    auto move_cluster_id = std::get<0>(best_move);
+    auto current_cluster_id = helper->ClusterIds()[i];
+    if (move_cluster_id < current_graph->n &&
+        helper->ClusterSizes()[move_cluster_id] == 1 &&
+        helper->ClusterSizes()[current_cluster_id] == 1 &&
+        current_cluster_id >= move_cluster_id) {
+      best_move = std::make_tuple(current_cluster_id, 0);
+    }
+    if (std::get<1>(best_move) > 0) {
+      moves[i] = std::get<0>(best_move);
+      moves_obj[i] = std::get<1>(best_move);
+    }
+      }
+    });
+    auto more_moved_clusters = helper->MoveNodesToCluster(moves);//, moves_obj, current_graph);
+    pbbs::parallel_for(0, num_nodes, [&](std::size_t i) {
+        moved_clusters[i] |= more_moved_clusters[i];
+      });*/
+  }
 
   // Perform cluster moves
   if (clusterer_config.correlation_clusterer_config()
@@ -523,6 +566,8 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
       //std::cout << "REFINE2: " << i << std::endl;
       // Take iter + 1 helper; use it to compress into iter helper; then
       // do best moves again, using the graph and node weights from iter
+
+      // TODO: get rid of subclustering here
       CorrelationClustererSubclustering subclustering(clusterer_config, current_graph);
       IterateBestMoves(num_inner_iterations, clusterer_config, current_graph,
         refine.recurse_helpers[i].get(), subclustering);
@@ -542,6 +587,84 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
   return absl::OkStatus();
 }
 
+/*
+// The following supports both "union" that is only safe sequentially
+// and "link" that is safe in parallel.  Find is always safe in parallel.
+// See:  "Internally deterministic parallel algorithms can be fast"
+// Blelloch, Fineman, Gibbons, and Shun
+// for a discussion of link/find.
+template <class vertexId>
+struct unionFind {
+  pbbs::sequence<vertexId> parents;
+
+  bool is_root(vertexId u) { return parents[u] < 0; }
+
+  // initialize n elements all as roots
+  unionFind(size_t n) { parents = pbbs::sequence<vertexId>(n, [](std::size_t i){return -1;}); }
+
+  vertexId find(vertexId i) {
+    if (is_root(i)) return i;
+    vertexId p = parents[i];
+    if (is_root(p)) return p;
+
+    // find root, shortcutting along the way
+    do {
+      vertexId gp = parents[p];
+      parents[i] = gp;
+      i = p;
+      p = gp;
+    } while (!is_root(p));
+    return p;
+  }
+
+  // If using "union" then "parents" are used both as
+  // parent pointer and for rank (a bit of a hack).
+  // When a vertex is a root (negative) then the magnitude
+  // of the negative number is its rank.
+  // Otherwise it is the vertexId of its parent.
+  // cannot be called union since reserved in C
+  void union_roots(vertexId u, vertexId v) {
+    if (parents[v] < parents[u]) std::swap(u, v);
+    // now u has higher rank (higher negative number)
+    parents[u] += parents[v];  // update rank of root
+    parents[v] = u;            // update parent of other tree
+  }
+
+  // Version of union that is safe for parallelism
+  // when no cycles are created (e.g. only link from larger
+  // to smaller vertexId).
+  // Does not use ranks.
+  void link(vertexId u, vertexId v) { parents[u] = v; }
+
+  // returns true if successful
+  bool tryLink(vertexId u, vertexId v) {
+    return (parents[u] == -1 &&
+            pbbs::atomic_compare_and_swap(&parents[u], -1, v));
+  }
+};
+
+
+template<class G, class parent, class F>
+void compute_components2(std::vector<parent>& parents, G& GA, F func) {
+    using W = typename G::weight_type;
+    size_t n = GA.n;
+    //gbbs::uintE granularity = 1;
+    unionFind<int> union_find(n);
+
+    pbbs::parallel_for(0, n, [&] (std::size_t i) {
+      auto map_f = [&] (gbbs::uintE u, gbbs::uintE v, const W& wgh) {
+        if (v < u && func(v)) {
+          union_find.link(u, v);
+        }
+      };
+      if (func(i)) GA.get_vertex(i).mapOutNgh(i, map_f);
+    });
+
+    pbbs::parallel_for(0, n, [&] (std::size_t i) {
+      parents[i] = union_find.find(i);
+    });
+  }
+*/
 absl::Status ParallelCorrelationClusterer::RefineClusters(
     const ClustererConfig& clusterer_config,
     InMemoryClusterer::Clustering* initial_clustering,
@@ -551,16 +674,99 @@ absl::Status ParallelCorrelationClusterer::RefineClusters(
   if (config.preclustering_method() == CorrelationClustererConfig::KCORE_PRECLUSTERING) {
       // First, run a truncated k-core
       // TODO: this is not truncated
+
+auto begin = std::chrono::steady_clock::now();
       auto cores = gbbs::KCore(*(graph_.Graph()), 16);
+auto end = std::chrono::steady_clock::now();
+std::cout << "KCore Time: " <<  (std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()) /1000000.0  <<std::endl;
+      
+/*if (config.kcore_config().connect_only()) {
+      std::vector<gbbs::uintE> ids((graph_.Graph())->n);
+      auto f = [&](gbbs::uintE u) -> bool {
+        return cores[u] >= config.kcore_config().kcore_cutoff();
+      };
+      compute_components2(ids, *(graph_.Graph()), f);
+      auto get_clusters = [&](NodeId i) -> NodeId { return i; };
+      *initial_clustering = parallel::OutputIndicesById<ClusterId, NodeId>(
+        ids, get_clusters, ids.size());
+} else {*/
+
+auto cutoff = config.kcore_config().kcore_cutoff();
+if (cutoff != 0) {
       auto num_in_cores = pbbslib::make_sequence<gbbs::uintE>(graph_.Graph()->n, [&](std::size_t i){
-        if (cores[i] >= config.kcore_config().kcore_cutoff()) return gbbs::uintE{1};
+        if (cores[i] >= cutoff) return gbbs::uintE{1};
         return gbbs::uintE{0};
       });
       auto num_in_core = pbbslib::reduce_add(num_in_cores);
+      double percent_in_core = num_in_core / (double) graph_.Graph()->n;
       std::cout << "Num in core: " << num_in_core << std::endl;
+      std::cout << "Percent in core: " << percent_in_core << std::endl;
+      gbbs::uintE num_edges_in_core = 0;
+      for (std::size_t i = 0; i < graph_.Graph()->n; i++) {
+        if (cores[i] < cutoff) continue;
+        auto vtx = graph_.Graph()->get_vertex(i);
+        for (std::size_t j = 0; j < vtx.getOutDegree(); j++) {
+          if (cores[vtx.getOutNeighbor(j)] >= cutoff) num_edges_in_core++;
+        }
+      }
+      std::cout << "Num edges in core: " << num_edges_in_core << std::endl;
+} else{
+  // hash vert in core
+  pbbslib::sparse_additive_map<gbbs::uintE, gbbs::uintE> freq_cores = pbbslib::sparse_additive_map<gbbs::uintE, gbbs::uintE>(graph_.Graph()->n, std::make_tuple<gbbs::uintE, gbbs::uintE>(UINT_E_MAX, UINT_E_MAX));
+  pbbs::parallel_for(0, graph_.Graph()->n, [&](std::size_t i){
+    freq_cores.insert(std::make_tuple(cores[i], 1));
+  });
+  auto freq_cores_table = freq_cores.entries();
+  freq_cores_table = pbbslib::sample_sort(freq_cores_table, [&](std::tuple<gbbs::uintE, gbbs::uintE> a, std::tuple<gbbs::uintE, gbbs::uintE> b){
+    return std::get<0>(a) > std::get<0>(b);
+  }, true);
+  /*gbbs::uintE sum = 0;
+  for (std::size_t i = 1; i < freq_cores_table.size(); i ++) {
+    if(std::get<0>(freq_cores_table[i-1]) <= std::get<0>(freq_cores_table[i])) std::cout << "ERR" << std::endl;
+    sum += std::get<1>(freq_cores_table[i]);
+  }
+  sum += std::get<1>(freq_cores_table[0]);
+  std::cout << " Sum: " << sum << std::endl;
+  assert(sum == graph_.Graph()->n);*/
+  //std::cout << "First: " << std::get<0>(freq_cores_table[freq_cores_table.size() - 1]) << std::endl;
+  //std::cout << "Last: " << std::get<0>(freq_cores_table[0]) << std::endl;
+  //assert(std::get<0>(freq_cores_table[freq_cores_table.size() - 1]) <= std::get<0>(freq_cores_table[0]));
+  // now do a prefix sum, then a percentage
+  /*double cut = config.kcore_config().percent_cutoff() * graph_.Graph()->n;
+  double sofar = 0;
+  for (std::size_t i = 0; i < freq_cores_table.size(); i ++) {
+    sofar += std::get<1>(freq_cores_table[i]);
+    if (sofar >= cut) {
+      cutoff = std::get<0>(freq_cores_table[i]);
+      break;
+    }
+  }
+  std::cout << "Num vert; " << gbbs::uintE{config.kcore_config().percent_cutoff() * graph_.Graph()->n} << ", " << graph_.Graph()->n << std::endl;
+  std::cout << "Sofar: " << sofar << std::endl;*/
+  auto add_mon = [](std::tuple<gbbs::uintE, gbbs::uintE> a, std::tuple<gbbs::uintE, gbbs::uintE> b){
+    return std::make_tuple(std::get<0>(b), std::get<1>(a) + std::get<1>(b));
+  };
+  auto mon = pbbslib::make_monoid(add_mon, std::make_tuple(gbbs::uintE{0}, gbbs::uintE{0}));
+  auto total = pbbs::scan_inplace(freq_cores_table.slice(), mon);
+  // find the right percent cutoff in the prefix sum
+  auto found_idx = pbbslib::binary_search(freq_cores_table, 
+    std::make_tuple(gbbs::uintE{0}, gbbs::uintE{config.kcore_config().percent_cutoff() * graph_.Graph()->n}),
+    [](std::tuple<gbbs::uintE, gbbs::uintE> a, std::tuple<gbbs::uintE, gbbs::uintE> b){
+      return std::get<1>(a) < std::get<1>(b);
+    });
+  cutoff = found_idx != freq_cores_table.size() ? std::get<0>(freq_cores_table[found_idx]) : 
+    std::get<0>(freq_cores_table[freq_cores_table.size() - 1]);
+  
+  /*std::cout << "num: " << std::get<1>(freq_cores_table[found_idx]) << std::endl;
+  std::cout << "num after: " << std::get<1>(freq_cores_table[found_idx + 1]) << std::endl;
+  std::cout << "core after: " << std::get<0>(freq_cores_table[found_idx + 1]) << std::endl;
+  std::cout << "num after: " << std::get<1>(freq_cores_table[found_idx - 1]) << std::endl;
+  std::cout << "core after: " << std::get<0>(freq_cores_table[found_idx - 1]) << std::endl;*/
+  std::cout << "Cutoff core: " << cutoff << std::endl;
+}
       // Prune graph to be only vert in higher cores -- > 7 maybe
       auto pack_predicate = [&](const gbbs::uintE& u, const gbbs::uintE& v, const float& wgh) {
-        return (cores[u] >= config.kcore_config().kcore_cutoff() && cores[v] >= config.kcore_config().kcore_cutoff());
+        return (cores[u] >= cutoff && cores[v] >= cutoff);
       };
       auto G_core = filterGraph(*(graph_.Graph()), pack_predicate);
       // Run RefineClusters on the sparsified graph
@@ -572,7 +778,10 @@ absl::Status ParallelCorrelationClusterer::RefineClusters(
       core_config.CopyFrom(clusterer_config);
       core_config.mutable_correlation_clusterer_config()->set_resolution(std::get<1>(new_config_params));
       core_config.mutable_correlation_clusterer_config()->set_edge_weight_offset(0);
+      core_config.mutable_correlation_clusterer_config()->mutable_louvain_config()->set_num_inner_iterations(5);
+      core_config.mutable_correlation_clusterer_config()->mutable_louvain_config()->set_num_iterations(2);
       RETURN_IF_ERROR(RefineClusters_subroutine(core_config, initial_clustering, std::get<0>(new_config_params), &G_core));
+//}
       //std::cout << "START COMPRESS" << std::endl;
       // Now, redo clustering on original graph
       // This way does not force original clusters to be maintained

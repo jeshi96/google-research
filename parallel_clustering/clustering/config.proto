@@ -152,6 +152,8 @@ message CorrelationClustererConfig {
 message KcoreConfig {
   optional int32 kcore_cutoff = 1;
   optional bool fix_preclusters = 2;
+  optional bool connect_only = 3;
+  optional double percent_cutoff = 4;
 }
 
 // This config is for clustering using the Louvain algorithm, where the

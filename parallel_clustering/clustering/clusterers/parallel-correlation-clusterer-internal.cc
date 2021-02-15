@@ -111,6 +111,92 @@ double ClusteringHelper::ComputeObjective(
 }
 
 std::unique_ptr<bool[]> ClusteringHelper::MoveNodesToCluster(
+  std::vector<absl::optional<ClusterId>>& moves,
+  std::vector<double>& moves_obj,
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph) {
+  const auto& config = clusterer_config_.correlation_clusterer_config();
+  const double offset = config.edge_weight_offset();
+  const double resolution = config.resolution();
+  // Sort moves by moves_obj
+  using M = std::tuple<gbbs::uintE, absl::optional<ClusterId>, double>;
+  auto get_moves_func = [&](std::size_t i) {
+    return std::make_tuple(gbbs::uintE{i}, moves[i], moves_obj[i]);
+  };
+  auto moves_sort = pbbs::sample_sort(
+      pbbs::delayed_seq<M>(moves.size(), get_moves_func),
+      [&](M a, M b) { return std::get<2>(a) > std::get<2>(b); }, true);
+  // Then, compute prefix sum type thing of what total obj to that point would be
+  // To do this, first, for each obj at vtx i, and for each prior vtx j,
+  // if i and j are moving to the same cluster, then add val depending on if there's
+  // an edge or not; also, if i and j were previously in the same cluster, then
+  // we must have thought that i and j will be separated, so we would've subtracted
+  // val; we must add back in val
+  // Then do prefix sum
+  pbbs::parallel_for(0, moves_sort.size(), [&](std::size_t i) {
+    auto vtx_idx = std::get<0>(moves_sort[i]);
+    if (std::get<1>(moves_sort[i]).has_value()) {
+      auto move_id = std::get<1>(moves_sort[i]).value();
+      double val_total = 0;
+      std::unordered_map<gbbs::uintE, float> vtx_nbhrs;
+      auto vtx = current_graph->get_vertex(vtx_idx);
+      for (std::size_t k = 0; k < vtx.getOutDegree(); k++) {
+        vtx_nbhrs.insert(std::make_pair(vtx.getOutNeighbor(k), std::get<1>((vtx.getOutNeighbors())[k])));
+      }
+      for (std::size_t j = 0; j < i; j++) {
+        auto vtx_idx2 = std::get<0>(moves_sort[j]);
+        if (!std::get<1>(moves_sort[j]).has_value()) break;
+        auto move_id2 = std::get<1>(moves_sort[j]).value();
+        // now we know both i and j are moving
+      // if they were previously in different clusters, and now are moving to the same
+      // cluster -- add twice (w_uv - edge_weight_offset - resolution k_u k_v) if edge, (-resolution k_u k_v) otherwise
+
+      // if they were previously in the same cluster, and are now moving to diff clusters, do nothing
+      // if they were previously in the same cluster, and are now moving to the same cluster,
+      // add twice the val above
+ 
+      // if they are moving to the same place
+        if (move_id == move_id2) {
+          double val = -1 * resolution * node_weights_[vtx_idx] * node_weights_[vtx_idx2];
+          auto find = vtx_nbhrs.find(vtx_idx2);
+          if (find != vtx_nbhrs.end()) {
+            val += find->second - offset;
+          }
+          val_total += val;
+        }
+        // if one thought they were moving to the cluster of the other, but now they're not
+      // if they were previously in the same cluster
+      //if (cluster_ids_[vtx_idx] == cluster_ids_[vtx_idx2])
+      }
+      moves_sort[i] = std::make_tuple(vtx_idx, std::get<1>(moves_sort[i]), val_total + std::get<2>(moves_sort[i]));
+    }
+  });
+  auto f = [](const M& a, const M& b){
+    return std::make_tuple(std::get<0>(b), std::get<1>(b), std::get<2>(a) + std::get<2>(b));
+  };
+  auto mon = pbbslib::make_monoid(f, std::make_tuple(gbbs::uintE{0}, 0, double{0}));
+  auto all = pbbs::scan_inplace(moves_sort.slice(), mon);
+  // Find the max move
+  std::size_t max_idx = moves_sort.size();
+  double mm = std::get<2>(all);
+  for (std::size_t i = 0; i < moves_sort.size(); i++) {
+    if (std::get<2>(moves_sort[i]) > mm) {
+      mm = std::get<2>(moves_sort[i]);
+      max_idx = i;
+    }
+  }
+  if (max_idx == moves_sort.size()) {
+    moves_sort.clear();
+    return MoveNodesToCluster(moves);
+  }
+  pbbs::parallel_for(max_idx + 1, moves_sort.size(), [&](std::size_t i){
+    moves[std::get<0>(moves_sort[i])] = absl::optional<ClusterId>();
+  });
+  moves_sort.clear();
+  return MoveNodesToCluster(moves);
+  // Then, null out any moves after that -- and call MoveNodesToCluster on remaining
+}
+
+std::unique_ptr<bool[]> ClusteringHelper::MoveNodesToCluster(
     const std::vector<absl::optional<ClusterId>>& moves) {
   auto modified_cluster = absl::make_unique<bool[]>(num_nodes_);
   pbbs::parallel_for(0, num_nodes_,

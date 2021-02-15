@@ -94,6 +94,11 @@ class ClusteringHelper {
   // index was not modified. Nodes may not necessarily move if the best move
   // provided is to stay in their existing cluster.
   std::unique_ptr<bool[]> MoveNodesToCluster(
+      std::vector<absl::optional<ClusterId>>& moves,
+      std::vector<double>& moves_obj,
+      gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph);
+
+std::unique_ptr<bool[]> MoveNodesToCluster(
       const std::vector<absl::optional<ClusterId>>& moves);
 
   // Returns a tuple of:
