@@ -23,6 +23,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "clustering/config.pb.h"
+#include "external/gbbs/gbbs/gbbs.h"
 
 namespace research_graph {
 namespace in_memory {
@@ -39,7 +40,7 @@ class InMemoryClusterer {
   // node of id k to an empty graph creates k+1 nodes 0, ..., k.
   class Graph {
    public:
-    using NodeId = int32_t;
+    using NodeId = gbbs::uintE;
 
     // Represents a weighted node with weighted outgoing edges.
     struct AdjacencyList {
