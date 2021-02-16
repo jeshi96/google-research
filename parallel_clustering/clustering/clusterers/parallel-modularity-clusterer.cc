@@ -69,7 +69,7 @@ absl::Status ParallelModularityClusterer::RefineClusters(
     const ClustererConfig& clusterer_config2,
     InMemoryClusterer::Clustering* initial_clustering) const {
   std::cout << "Begin modularity" << std::endl;
-  fflush(stdout);
+
   // TODO: we just use correlation config
   const auto& config = clusterer_config2.correlation_clusterer_config();
   auto modularity_config= ComputeModularityConfig(graph_.Graph(), config.resolution());
@@ -124,7 +124,7 @@ ParallelModularityClusterer::Cluster(
 
   // Create all-singletons initial clustering
   pbbs::parallel_for(0, graph_.Graph()->n, [&](std::size_t i) {
-    clustering[i] = {static_cast<int32_t>(i)};
+    clustering[i] = {static_cast<gbbs::uintE>(i)};
   });
 
   RETURN_IF_ERROR(RefineClusters(clusterer_config, &clustering));

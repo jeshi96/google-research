@@ -422,7 +422,7 @@ absl::StatusOr<GraphWithWeights> CompressSubclusters(const ClustererConfig& clus
       local_cluster_ids[j] = i-1;
     }
   });
-  new_clustering = parallel::OutputIndicesById<ClusteringHelper::ClusterId, int>(
+  new_clustering = parallel::OutputIndicesById<ClusteringHelper::ClusterId, gbbs::uintE>(
     local_cluster_ids, get_clusters, next_id);
 
   return CompressGraph(*current_graph, subcluster_ids, helper);
@@ -433,8 +433,8 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
     InMemoryClusterer::Clustering* initial_clustering,
     std::vector<double> node_weights,
     gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph) const {
-      std::cout << "REFINE" << std::endl;
-      fflush(stdout);
+      //std::cout << "REFINE" << std::endl;
+      //fflush(stdout);
     const auto& config = clusterer_config.correlation_clusterer_config();
   // Set number of iterations based on clustering method
   int num_iterations = 0;
@@ -448,11 +448,11 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
     case CorrelationClustererConfig::LOUVAIN:
       num_iterations = config.louvain_config().num_iterations() > 0
                            ? config.louvain_config().num_iterations()
-                           : 32;
+                           : 10;
       num_inner_iterations =
           config.louvain_config().num_inner_iterations() > 0
               ? config.louvain_config().num_inner_iterations()
-              : 32;
+              : 10;
       break;
     default:
       return absl::UnimplementedError(
@@ -583,6 +583,16 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
 
   *initial_clustering = parallel::OutputIndicesById<ClusterId, NodeId>(
       cluster_ids, get_clusters, cluster_ids.size());
+
+  // Hack to compute objective
+  auto helper2 = node_weights.empty() ? absl::make_unique<ClusteringHelper>(
+      graph->n, clusterer_config, *initial_clustering) :
+      absl::make_unique<ClusteringHelper>(
+      graph->n, clusterer_config, node_weights, *initial_clustering);
+  // The max objective is the maximum objective given by the inner iterations
+  // of best moves rounds
+  double max_objective = helper2->ComputeObjective(*graph);
+  std::cout << "Objective: " << max_objective << std::endl;
 
   return absl::OkStatus();
 }
@@ -802,7 +812,7 @@ if (cutoff != 0) {
       InMemoryClusterer::Clustering local_clustering(new_compressed_graph.graph->n);
       // Create all-singletons initial clustering
       pbbs::parallel_for(0, new_compressed_graph.graph->n, [&](std::size_t i) {
-        local_clustering[i] = {static_cast<int32_t>(i)};
+        local_clustering[i] = {static_cast<gbbs::uintE>(i)};
       });
       //std::cout << "START NEXT REFINE" << std::endl;
       RETURN_IF_ERROR(RefineClusters_subroutine(clusterer_config, &local_clustering,
@@ -832,7 +842,7 @@ ParallelCorrelationClusterer::Cluster(
   InMemoryClusterer::Clustering clustering(graph_.Graph()->n);
   // Create all-singletons initial clustering
   pbbs::parallel_for(0, graph_.Graph()->n, [&](std::size_t i) {
-    clustering[i] = {static_cast<int32_t>(i)};
+    clustering[i] = {static_cast<gbbs::uintE>(i)};
   });
 
   RETURN_IF_ERROR(RefineClusters(clusterer_config, &clustering));

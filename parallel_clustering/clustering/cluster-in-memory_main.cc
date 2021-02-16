@@ -72,19 +72,22 @@ void PrintTime(std::chrono::steady_clock::time_point begin, std::chrono::steady_
 double DoubleFromWeight(pbbslib::empty weight) { return 1; }
 double DoubleFromWeight(double weight) { return weight; }
 
+float FloatFromWeight(float weight) { return weight; }
+float FloatFromWeight(pbbslib::empty weight) { return 1; }
+
 template <class Graph>
 absl::Status GbbsGraphToInMemoryClustererGraph(InMemoryClusterer::Graph* graph,
                                                Graph& gbbs_graph) {
   using weight_type = typename Graph::weight_type;
   for (std::size_t i = 0; i < gbbs_graph.n; i++) {
     auto vertex = gbbs_graph.get_vertex(i);
-    std::vector<std::pair<int32_t, double>> outgoing_edges(
+    std::vector<std::pair<gbbs::uintE, double>> outgoing_edges(
         vertex.getOutDegree());
     gbbs::uintE index = 0;
     auto add_outgoing_edge = [&](gbbs::uintE, const gbbs::uintE neighbor,
                                  weight_type wgh) {
       outgoing_edges[index] = std::make_pair(
-        static_cast<int32_t>(neighbor), DoubleFromWeight(wgh));
+        static_cast<gbbs::uintE>(neighbor), DoubleFromWeight(wgh));
       index++;
     };
     vertex.mapOutNgh(i, add_outgoing_edge, false);
@@ -129,7 +132,7 @@ absl::Status WriteClustering(const char* filename,
   if (!file.is_open()) {
     return absl::NotFoundError("Unable to open file.");
   }
-  for (int64_t i = 0; i < clustering.size(); i++) {
+  for (gbbs::uintE i = 0; i < clustering.size(); i++) {
     for (auto node_id : clustering[i]) {
       file << node_id << "\t";
     }
@@ -138,7 +141,7 @@ absl::Status WriteClustering(const char* filename,
   return absl::OkStatus();
 }
 
-void split(const std::string &s, char delim, std::vector<int> &elems) {
+void split(const std::string &s, char delim, std::vector<gbbs::uintE> &elems) {
   std::stringstream ss;
   ss.str(s);
   std::string item;
@@ -148,14 +151,14 @@ void split(const std::string &s, char delim, std::vector<int> &elems) {
 }
 
 absl::Status ReadCommunities(const char* filename,
-  std::vector<std::vector<int>>& communities) {
+  std::vector<std::vector<gbbs::uintE>>& communities) {
   std::ifstream infile(filename);
   if (!infile.is_open()) {
     return absl::NotFoundError("Unable to open file.");
   }
   std::string line;
   while (std::getline(infile, line)) {
-    std::vector<int> row_values;
+    std::vector<gbbs::uintE> row_values;
     split(line, '\t', row_values);
     std::sort(row_values.begin(), row_values.end());
     communities.push_back(row_values);
@@ -164,7 +167,7 @@ absl::Status ReadCommunities(const char* filename,
 }
 
 absl::Status CompareCommunities(const char* filename, InMemoryClusterer::Clustering clustering) {
-  std::vector<std::vector<int>> communities;
+  std::vector<std::vector<gbbs::uintE>> communities;
   ReadCommunities(filename, communities);
   // precision = num correct results (matches b/w clustering and comm) / num returned results (in clustering)
   // recall = num correct results (matches b/w clustering and comm) / num relevant results (in comm)
@@ -176,7 +179,7 @@ absl::Status CompareCommunities(const char* filename, InMemoryClusterer::Cluster
   });
   pbbs::parallel_for(0, communities.size(), [&](std::size_t j) {
     auto community = communities[j];
-    std::vector<int> intersect(community.size());
+    std::vector<gbbs::uintE> intersect(community.size());
     std::size_t max_intersect = 0;
     std::size_t max_idx = 0;
     // Find the community in communities that has the greatest intersection with cluster
@@ -223,7 +226,30 @@ struct FakeGraph {
   std::size_t n;
 };
 
+template <class Graph>
+gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float> CopyGraph(Graph& graph){
+  using vertex_data = gbbs::symmetric_vertex<float>;
+  using edge_type = std::tuple<gbbs::uintE, float>;
+  auto vd = pbbs::new_array_no_init<vertex_data>(graph.n);
+  auto ed = pbbs::new_array_no_init<edge_type>(graph.m);
+  pbbs::parallel_for(0, graph.n, [&] (size_t i) {
+    vd[i].degree = graph.v_data[i].degree;
+    vd[i].neighbors = ed + graph.v_data[i].offset;
+  });
+  pbbs::parallel_for(0, graph.m, [&] (size_t i) {
+    ed[i] = std::make_tuple(
+        std::get<0>(graph.e0[i]), FloatFromWeight(std::get<1>(graph.e0[i]))); //graph.e0[i];
+  });
+  auto g = gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>(graph.n, graph.m, vd, [vd, ed] () {
+      pbbs::free_array(vd);
+      pbbs::free_array(ed);
+  });
+  return g;
+}
+
 absl::Status Main() {
+  gbbs::pcm_init();
+
   std::string clusterer_name = absl::GetFlag(FLAGS_clusterer_name);
 
   ClustererConfig config;
@@ -250,10 +276,27 @@ absl::Status Main() {
   }
 auto begin_read = std::chrono::steady_clock::now();
   std::string input_file = absl::GetFlag(FLAGS_input_graph);
-  bool is_symmetric_graph = absl::GetFlag(FLAGS_is_symmetric_graph);
+  //bool is_symmetric_graph = absl::GetFlag(FLAGS_is_symmetric_graph); // Assume symmetric
   bool float_weighted = absl::GetFlag(FLAGS_float_weighted);
   std::size_t n = 0;
+
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float> g;
   if (float_weighted) {
+    auto G = gbbs::gbbs_io::read_weighted_symmetric_graph<float>(
+            input_file.c_str(), false);
+    gbbs::alloc_init(G);
+    // Transform to pointer graph
+    n = G.n;
+    g = CopyGraph(G);
+  } else {
+    auto G = gbbs::gbbs_io::read_unweighted_symmetric_graph(input_file.c_str(), false);
+    gbbs::alloc_init(G);
+    // Transform to pointer graph
+    n = G.n;
+    g = CopyGraph(G);
+  }
+  clusterer->MutableGraph()->graph_ = absl::make_unique<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>(g);
+  /*if (float_weighted) {
     const auto edge_list{
         gbbs::gbbs_io::read_weighted_edge_list<float>(input_file.c_str())};
     ASSIGN_OR_RETURN(n, WriteEdgeListAsGraph(clusterer->MutableGraph(),
@@ -263,13 +306,12 @@ auto begin_read = std::chrono::steady_clock::now();
         gbbs::gbbs_io::read_unweighted_edge_list(input_file.c_str())};
     ASSIGN_OR_RETURN(n, WriteEdgeListAsGraph(clusterer->MutableGraph(),
                                              edge_list, is_symmetric_graph));
-  }
+  }*/
 auto end_read = std::chrono::steady_clock::now();
 PrintTime(begin_read, end_read, "Read");
   // Must initialize the list allocator for GBBS, to support parallelism.
   // The list allocator seeds using the number of vertices in the input graph.
-  FakeGraph fake_graph{n};
-  gbbs::alloc_init(fake_graph);
+  
 auto begin_cluster = std::chrono::steady_clock::now();
   InMemoryClusterer::Clustering clustering;
   ASSIGN_OR_RETURN(clustering, clusterer->Cluster(config));

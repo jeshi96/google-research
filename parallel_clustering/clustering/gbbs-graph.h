@@ -46,8 +46,8 @@ class GbbsGraph : public InMemoryClusterer::Graph {
 
   gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* Graph() const;
 
-  std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>
-      graph_;
+  //std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>
+  //    graph_;
 
  private:
   // Ensures that the graph has the given number of nodes, by adding new nodes
