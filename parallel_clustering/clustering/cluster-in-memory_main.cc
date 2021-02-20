@@ -250,6 +250,7 @@ gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float> CopyGraph(Graph& graph)
 }
 
 absl::Status Main() {
+  std::cout.precision(17);
   gbbs::pcm_init();
 
   std::string clusterer_name = absl::GetFlag(FLAGS_clusterer_name);
