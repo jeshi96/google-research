@@ -5,7 +5,7 @@ git_repository(
     name = "gbbs",
     remote = "https://github.com/ParAlg/gbbs.git",
     #branch = "master",
-    commit = "0cd24b8fd5e824a8dffb2ca3760b90cf8a3e114b",
+    commit = "d385adac3bda3671016574a67c8387c6c8b486b6",
 )
 
 http_archive(
