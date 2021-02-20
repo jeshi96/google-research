@@ -33,8 +33,8 @@ def run_1_1():
   moves_pres = ["all"]
   resolutions = [0.01, 0.85]#[0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
   num_workers = [96]#[1, 2, 4, 8, 16, 30, 60]
-  read_dir = "/home/jeshi/snap/"
-  write_dir = "/home/jeshi/clustering_out/"
+  read_dir = "/home/ubuntu/snap/"
+  write_dir = "/home/ubuntu/clustering_out/"
   for prog_idx, prog in enumerate(programs):
     for file_idx, filename in enumerate(files):
       for r in resolutions:
@@ -44,7 +44,7 @@ def run_1_1():
               for nw in num_workers:
                 for i in range(4):
                   out_filename = write_dir + programs_pres[prog_idx] + "_" + pres[file_idx] + "_" + str(r) + "_" + asy + "_" + ref + "_" + moves_pres[move_idx]+"_" + str(nw) + ".out"
-                  ss = ("NUM_THREADS="+nw+" timeout 6h bazel-1.0.0 run //clustering:cluster-in-memory_main -- --"
+                  ss = ("NUM_THREADS="+nw+" timeout 6h bazel-3.5.1 run //clustering:cluster-in-memory_main -- --"
                   "input_graph=/home/jeshi/snap/" + filename + " --clusterer_name=" + prog + " "
                   " --clusterer_config='correlation_clusterer_config"
                   " {resolution: " + str(r) + ", subclustering_method: NONE_SUBCLUSTERING, "
@@ -64,8 +64,8 @@ def run_1_2():
   moves_pres = ["cluster","nbhr"]
   resolutions = [0.01, 0.85]#[0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
   num_workers = [96]#[1, 2, 4, 8, 16, 30, 60]
-  read_dir = "/home/jeshi/snap/"
-  write_dir = "/home/jeshi/clustering_out/"
+  read_dir = "/home/ubuntu/snap/"
+  write_dir = "/home/ubuntu/clustering_out/"
   for prog_idx, prog in enumerate(programs):
     for file_idx, filename in enumerate(files):
       for r in resolutions:
@@ -75,7 +75,7 @@ def run_1_2():
               for nw in num_workers:
                 for i in range(4):
                   out_filename = write_dir + programs_pres[prog_idx] + "_" + pres[file_idx] + "_" + str(r) + "_" + asy + "_" + ref + "_" + moves_pres[move_idx]+"_" + str(nw) + ".out"
-                  ss = ("NUM_THREADS="+nw+" timeout 6h bazel-1.0.0 run //clustering:cluster-in-memory_main -- --"
+                  ss = ("NUM_THREADS="+nw+" timeout 6h bazel-3.5.1 run //clustering:cluster-in-memory_main -- --"
                   "input_graph=/home/jeshi/snap/" + filename + " --clusterer_name=" + prog + " "
                   " --clusterer_config='correlation_clusterer_config"
                   " {resolution: " + str(r) + ", subclustering_method: NONE_SUBCLUSTERING, "
@@ -95,8 +95,8 @@ def run_1_3():
   moves_pres = ["nbhr"]
   resolutions = [0.01, 0.85]#[0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
   num_workers = [96]#[1, 2, 4, 8, 16, 30, 60]
-  read_dir = "/home/jeshi/snap/"
-  write_dir = "/home/jeshi/clustering_out/"
+  read_dir = "/home/ubuntu/snap/"
+  write_dir = "/home/ubuntu/clustering_out/"
   for prog_idx, prog in enumerate(programs):
     for file_idx, filename in enumerate(files):
       for r in resolutions:
@@ -106,7 +106,7 @@ def run_1_3():
               for nw in num_workers:
                 for i in range(4):
                   out_filename = write_dir + programs_pres[prog_idx] + "_" + pres[file_idx] + "_" + str(r) + "_" + asy + "_" + ref + "_" + moves_pres[move_idx]+"_" + str(nw) + ".out"
-                  ss = ("NUM_THREADS="+nw+" timeout 6h bazel-1.0.0 run //clustering:cluster-in-memory_main -- --"
+                  ss = ("NUM_THREADS="+nw+" timeout 6h bazel-3.5.1 run //clustering:cluster-in-memory_main -- --"
                   "input_graph=/home/jeshi/snap/" + filename + " --clusterer_name=" + prog + " "
                   " --clusterer_config='correlation_clusterer_config"
                   " {resolution: " + str(r) + ", subclustering_method: NONE_SUBCLUSTERING, "
