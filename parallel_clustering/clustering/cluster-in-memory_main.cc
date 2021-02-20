@@ -318,6 +318,7 @@ auto end_read = std::chrono::steady_clock::now();
 PrintTime(begin_read, end_read, "Read");
 
 std::cout << "Num workers: " << pbbs::num_workers() << std::endl;
+std::cout << "Graph: " << input_file << std::endl;
   // Must initialize the list allocator for GBBS, to support parallelism.
   // The list allocator seeds using the number of vertices in the input graph.
   
