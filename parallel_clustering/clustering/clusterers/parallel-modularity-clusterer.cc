@@ -92,7 +92,7 @@ t.stop(); t.reportTotal("Actual Modularity Config Time: ");
 
   double modularity = ComputeModularity(*initial_clustering,
     *graph_.Graph(), std::get<2>(modularity_config), cluster_ids, config.resolution());
-  std::cout << "Modularity: " << modularity << std::endl;
+  std::cout << "Modularity: " << std::setprecision(17) << modularity << std::endl;
 
   return absl::OkStatus();
 }

@@ -380,11 +380,11 @@ t.stop(); t.reportTotal("Actual Cluster Time: ");
   // The max objective is the maximum objective given by the inner iterations
   // of best moves rounds
   double max_objective = helper2->ComputeObjective(*graph);
-  std::cout << "Objective: " << max_objective << std::endl;
+  std::cout << "Objective: " << std::setprecision(17) << max_objective << std::endl;
 
   // Now, we must compute the disagreement objective
   double max_disagreement_objective = helper2->ComputeDisagreementObjective(*graph);
-  std::cout << "Disagreement Objective: " << max_disagreement_objective << std::endl;
+  std::cout << "Disagreement Objective: " << std::setprecision(17) << max_disagreement_objective << std::endl;
 
   std::cout << "Number of Clusters: " << initial_clustering->size() << std::endl;
 

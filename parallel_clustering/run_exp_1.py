@@ -33,8 +33,8 @@ def run_1_1():
   moves_pres = ["all"]
   resolutions = [0.01, 0.85]#[0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
   num_workers = [96]#[1, 2, 4, 8, 16, 30, 60]
-  read_dir = "/home/ubuntu/snap/"
-  write_dir = "/home/ubuntu/clustering_out/"
+  read_dir = "/home/jeshi/snap/"
+  write_dir = "/home/jeshi/clustering_out/"
   for prog_idx, prog in enumerate(programs):
     for file_idx, filename in enumerate(files):
       for r in resolutions:
@@ -64,8 +64,8 @@ def run_1_2():
   moves_pres = ["cluster","nbhr"]
   resolutions = [0.01, 0.85]#[0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
   num_workers = [96]#[1, 2, 4, 8, 16, 30, 60]
-  read_dir = "/home/ubuntu/snap/"
-  write_dir = "/home/ubuntu/clustering_out/"
+  read_dir = "/home/jeshi/snap/"
+  write_dir = "/home/jeshi/clustering_out/"
   for prog_idx, prog in enumerate(programs):
     for file_idx, filename in enumerate(files):
       for r in resolutions:
@@ -95,8 +95,8 @@ def run_1_3():
   moves_pres = ["nbhr"]
   resolutions = [0.01, 0.85]#[0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
   num_workers = [96]#[1, 2, 4, 8, 16, 30, 60]
-  read_dir = "/home/ubuntu/snap/"
-  write_dir = "/home/ubuntu/clustering_out/"
+  read_dir = "/home/jeshi/snap/"
+  write_dir = "/home/jeshi/clustering_out/"
   for prog_idx, prog in enumerate(programs):
     for file_idx, filename in enumerate(files):
       for r in resolutions:
