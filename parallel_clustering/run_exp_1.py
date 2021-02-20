@@ -32,7 +32,7 @@ def run_1_1():
   moves = ["ALL_MOVE"]
   moves_pres = ["all"]
   resolutions = [0.01, 0.85]#[0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
-  num_workers = [96]#[1, 2, 4, 8, 16, 30, 60]
+  num_workers = [60]#[1, 2, 4, 8, 16, 30, 60]
   read_dir = "/home/jeshi/snap/"
   write_dir = "/home/jeshi/clustering_out/"
   for prog_idx, prog in enumerate(programs):
@@ -63,7 +63,7 @@ def run_1_2():
   moves = ["NBHR_CLUSTER_MOVE", "NBHR_MOVE"]
   moves_pres = ["cluster","nbhr"]
   resolutions = [0.01, 0.85]#[0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
-  num_workers = [96]#[1, 2, 4, 8, 16, 30, 60]
+  num_workers = [60]#[1, 2, 4, 8, 16, 30, 60]
   read_dir = "/home/jeshi/snap/"
   write_dir = "/home/jeshi/clustering_out/"
   for prog_idx, prog in enumerate(programs):
@@ -94,7 +94,7 @@ def run_1_3():
   moves = ["NBHR_MOVE"]
   moves_pres = ["nbhr"]
   resolutions = [0.01, 0.85]#[0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
-  num_workers = [96]#[1, 2, 4, 8, 16, 30, 60]
+  num_workers = [60]#[1, 2, 4, 8, 16, 30, 60]
   read_dir = "/home/jeshi/snap/"
   write_dir = "/home/jeshi/clustering_out/"
   for prog_idx, prog in enumerate(programs):

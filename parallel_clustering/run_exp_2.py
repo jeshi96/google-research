@@ -32,7 +32,7 @@ def run_2_corr():
   moves = ["NBHR_MOVE"]
   moves_pres = ["nbhr"]
   resolutions = [x * (1.0/100.0) for x in range(1, 100)]
-  num_workers = [96]#[1, 2, 4, 8, 16, 30, 60]
+  num_workers = [60]#[1, 2, 4, 8, 16, 30, 60]
   read_dir = "/home/jeshi/snap/"
   write_dir = "/home/jeshi/clustering_out_exp2/"
   for prog_idx, prog in enumerate(programs):
@@ -64,7 +64,7 @@ def run_2_mod():
   moves = ["NBHR_MOVE"]
   moves_pres = ["nbhr"]
   resolutions = [0.02 * ((1 + 1.0 / 5.0) ** x) for x in range(0, 101)]
-  num_workers = [96]#[1, 2, 4, 8, 16, 30, 60]
+  num_workers = [60]#[1, 2, 4, 8, 16, 30, 60]
   read_dir = "/home/jeshi/snap/"
   write_dir = "/home/jeshi/clustering_out_exp2/"
   for prog_idx, prog in enumerate(programs):

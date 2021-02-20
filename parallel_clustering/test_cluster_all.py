@@ -32,7 +32,7 @@ def main():
   moves = ["ALL_MOVE", "NBHR_CLUSTER_MOVE", "NBHR_MOVE"]
   moves_pres = ["all","cluster","nbhr"]
   resolutions = [0.01, 0.85]#[0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
-  num_workers = [96]#[1, 2, 4, 8, 16, 32, 48, 96]
+  num_workers = [60]#[1, 2, 4, 8, 16, 30. 60]
   read_dir = "/home/ubuntu/snap/"
   write_dir = "/home/ubuntu/clustering_out/"
   for prog_idx, prog in enumerate(programs):
