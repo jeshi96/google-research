@@ -1,0 +1,89 @@
+import os
+import sys
+import signal
+import time
+import subprocess
+
+def signal_handler(signal,frame):
+  print "bye\n"
+  sys.exit(0)
+signal.signal(signal.SIGINT,signal_handler)
+
+def shellGetOutput(str1) :
+  process = subprocess.Popen(str1,shell=True,stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+  output, err = process.communicate()
+  
+  if (len(err) > 0):
+    print(str1+"\n"+output+err)
+  return output
+
+def appendToFile(out, filename):
+  with open(filename, "a+") as out_file:
+    out_file.writelines(out)
+
+def run_2_corr():
+  programs = ["ParallelCorrelationClusterer","CorrelationClusterer"]
+  programs_pres = ["pc","c"]
+  files = ["amazon_h","orkut_h"]#"dblp_h", "lj_h","orkut_h","friendster_h"]
+  pres = ["amazon","orkut"]#"dblp","lj","orkut","friendster"]
+  async_sync = ["true"]
+  refines = ["true"]
+  moves = ["NBHR_MOVE"]
+  moves_pres = ["nbhr"]
+  resolutions = [x * (1.0/100.0) for x in range(1, 100)]
+  num_workers = [96]#[1, 2, 4, 8, 16, 30, 60]
+  read_dir = "/home/ubuntu/snap/"
+  write_dir = "/home/ubuntu/clustering_out_exp2/"
+  for prog_idx, prog in enumerate(programs):
+    for file_idx, filename in enumerate(files):
+      for r in resolutions:
+        for ref_idx, ref in enumerate(refines):
+          for asy_idx, asy in enumerate(async_sync):
+            for move_idx, move in enumerate(moves):
+              for nw in num_workers:
+                if True:
+                  out_filename = write_dir + programs_pres[prog_idx] + "_" + pres[file_idx] + "_" + str(r) + "_" + asy + "_" + ref + "_" + moves_pres[move_idx]+"_" + str(nw) + ".out"
+                  ss = ("NUM_THREADS="+str(nw)+" timeout 6h bazel-3.5.1 run //clustering:cluster-in-memory_main -- --"
+                  "input_graph=" + read_dir  + filename + " --clusterer_name=" + prog + " "
+                  " --clusterer_config='correlation_clusterer_config"
+                  " {resolution: " + str(r) + ", subclustering_method: NONE_SUBCLUSTERING, "
+                  "clustering_moves_method: LOUVAIN , preclustering_method: NONE_PRECLUSTERING, "
+                  "refine: "+ref+", async: "+asy+", move_method: "+move+"}' --input_communities"
+                  "='" + read_dir + "com-" + pre[idx] + ".top5000.cmty.txt'")
+                  out = shellGetOutput(ss)
+                  appendToFile(out, out_filename)
+
+def run_2_mod():
+  programs = ["ParallelModularityClusterer","ModularityClusterer"]
+  programs_pres = ["pm","m"]
+  files = ["amazon_h","orkut_h"]#"dblp_h", "lj_h","orkut_h","friendster_h"]
+  pres = ["amazon","orkut"]#"dblp","lj","orkut","friendster"]
+  async_sync = ["true"]
+  refines = ["true"]
+  moves = ["NBHR_MOVE"]
+  moves_pres = ["nbhr"]
+  resolutions = [0.02 * ((1 + 1.0 / 5.0) ** x) for x in range(0, 101)]
+  num_workers = [96]#[1, 2, 4, 8, 16, 30, 60]
+  read_dir = "/home/ubuntu/snap/"
+  write_dir = "/home/ubuntu/clustering_out_exp2/"
+  for prog_idx, prog in enumerate(programs):
+    for file_idx, filename in enumerate(files):
+      for r in resolutions:
+        for ref_idx, ref in enumerate(refines):
+          for asy_idx, asy in enumerate(async_sync):
+            for move_idx, move in enumerate(moves):
+              for nw in num_workers:
+                if True:
+                  out_filename = write_dir + programs_pres[prog_idx] + "_" + pres[file_idx] + "_" + str(r) + "_" + asy + "_" + ref + "_" + moves_pres[move_idx]+"_" + str(nw) + ".out"
+                  ss = ("NUM_THREADS="+str(nw)+" timeout 6h bazel-3.5.1 run //clustering:cluster-in-memory_main -- --"
+                  "input_graph=" + read_dir  + filename + " --clusterer_name=" + prog + " "
+                  " --clusterer_config='correlation_clusterer_config"
+                  " {resolution: " + str(r) + ", subclustering_method: NONE_SUBCLUSTERING, "
+                  "clustering_moves_method: LOUVAIN , preclustering_method: NONE_PRECLUSTERING, "
+                  "refine: "+ref+", async: "+asy+", move_method: "+move+"}' --input_communities"
+                  "='" + read_dir + "com-" + pre[idx] + ".top5000.cmty.txt'")
+                  out = shellGetOutput(ss)
+                  appendToFile(out, out_filename)
+
+
