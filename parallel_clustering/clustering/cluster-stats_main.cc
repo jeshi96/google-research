@@ -217,6 +217,7 @@ struct FakeGraph {
 };
 
 absl::Status Main() {
+  std::cout << "Num workers: " << pbbs::num_workers() << std::endl;
   ClustererConfig config;
   std::string clusterer_config = absl::GetFlag(FLAGS_clusterer_config);
   if (!google::protobuf::TextFormat::ParseFromString(clusterer_config,
