@@ -123,7 +123,7 @@ RetrieveInterClusterEdges(
 
 }  // namespace
 
-std::tuple<std::vector<double>, double, std::size_t> ComputeModularityConfig(
+std::tuple<std::vector<double>, double, std::size_t> SeqComputeModularityConfig(
   gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph, double resolution){
   std::size_t total_edge_weight = 0;
   std::vector<double> node_weights(graph->n);
@@ -134,6 +134,20 @@ std::tuple<std::vector<double>, double, std::size_t> ComputeModularityConfig(
     total_edge_weight += wgh;
     node_weights[i] = wgh;
   }
+  double new_resolution = resolution / total_edge_weight;
+  return std::make_tuple(node_weights, new_resolution, total_edge_weight);
+}
+
+std::tuple<std::vector<double>, double, std::size_t> ComputeModularityConfig(
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph, double resolution){
+  std::vector<double> node_weights(graph->n);
+  pbbs::parallel_for(0, graph->n, [&](std::size_t i){
+    auto vtx = graph->get_vertex(i);
+    auto wgh = vtx.getOutDegree();
+    // TODO: this assumes unit edge weights
+    node_weights[i] = wgh;
+  });
+  double total_edge_weight = parallel::ReduceAdd(absl::Span<const double>(node_weights));
   double new_resolution = resolution / total_edge_weight;
   return std::make_tuple(node_weights, new_resolution, total_edge_weight);
 }

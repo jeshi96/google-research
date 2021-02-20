@@ -1,0 +1,39 @@
+python3 nk.py /home/jeshi/snap/amazon.edges /home/jeshi/out/amazon_0.000001_nk 0.000001
+python3 nk.py /home/jeshi/snap/amazon.edges /home/jeshi/out/amazon_0.00001_nk 0.00001
+python3 nk.py /home/jeshi/snap/amazon.edges /home/jeshi/out/amazon_0.0001_nk 0.0001
+python3 nk.py /home/jeshi/snap/amazon.edges /home/jeshi/out/amazon_0.001_nk 0.001
+python3 nk.py /home/jeshi/snap/amazon.edges /home/jeshi/out/amazon_0.01_nk 0.01
+python3 nk.py /home/jeshi/snap/amazon.edges /home/jeshi/out/amazon_0.1_nk 0.1
+python3 nk.py /home/jeshi/snap/amazon.edges /home/jeshi/out/amazon_0.25_nk 0.25
+python3 nk.py /home/jeshi/snap/amazon.edges /home/jeshi/out/amazon_0.5_nk 0.5
+python3 nk.py /home/jeshi/snap/amazon.edges /home/jeshi/out/amazon_1_nk 1
+
+python3 nk.py /home/jeshi/snap/dblp.edges /home/jeshi/out/dblp_0.000001_nk 0.000001
+python3 nk.py /home/jeshi/snap/dblp.edges /home/jeshi/out/dblp_0.00001_nk 0.00001
+python3 nk.py /home/jeshi/snap/dblp.edges /home/jeshi/out/dblp_0.0001_nk 0.0001
+python3 nk.py /home/jeshi/snap/dblp.edges /home/jeshi/out/dblp_0.001_nk 0.001
+python3 nk.py /home/jeshi/snap/dblp.edges /home/jeshi/out/dblp_0.01_nk 0.01
+python3 nk.py /home/jeshi/snap/dblp.edges /home/jeshi/out/dblp_0.1_nk 0.1
+python3 nk.py /home/jeshi/snap/dblp.edges /home/jeshi/out/dblp_0.25_nk 0.25
+python3 nk.py /home/jeshi/snap/dblp.edges /home/jeshi/out/dblp_0.5_nk 0.5
+python3 nk.py /home/jeshi/snap/dblp.edges /home/jeshi/out/dblp_1_nk 1
+
+python3 nk.py /home/jeshi/snap/lj.edges /home/jeshi/out/lj_0.000001_nk 0.000001
+python3 nk.py /home/jeshi/snap/lj.edges /home/jeshi/out/lj_0.00001_nk 0.00001
+python3 nk.py /home/jeshi/snap/lj.edges /home/jeshi/out/lj_0.0001_nk 0.0001
+python3 nk.py /home/jeshi/snap/lj.edges /home/jeshi/out/lj_0.001_nk 0.001
+python3 nk.py /home/jeshi/snap/lj.edges /home/jeshi/out/lj_0.01_nk 0.01
+python3 nk.py /home/jeshi/snap/lj.edges /home/jeshi/out/lj_0.1_nk 0.1
+python3 nk.py /home/jeshi/snap/lj.edges /home/jeshi/out/lj_0.25_nk 0.25
+python3 nk.py /home/jeshi/snap/lj.edges /home/jeshi/out/lj_0.5_nk 0.5
+python3 nk.py /home/jeshi/snap/lj.edges /home/jeshi/out/lj_1_nk 1
+
+python3 nk.py /home/jeshi/snap/orkut.edges /home/jeshi/out/orkut_0.000001_nk 0.000001
+python3 nk.py /home/jeshi/snap/orkut.edges /home/jeshi/out/orkut_0.00001_nk 0.00001
+python3 nk.py /home/jeshi/snap/orkut.edges /home/jeshi/out/orkut_0.0001_nk 0.0001
+python3 nk.py /home/jeshi/snap/orkut.edges /home/jeshi/out/orkut_0.001_nk 0.001
+python3 nk.py /home/jeshi/snap/orkut.edges /home/jeshi/out/orkut_0.01_nk 0.01
+python3 nk.py /home/jeshi/snap/orkut.edges /home/jeshi/out/orkut_0.1_nk 0.1
+python3 nk.py /home/jeshi/snap/orkut.edges /home/jeshi/out/orkut_0.25_nk 0.25
+python3 nk.py /home/jeshi/snap/orkut.edges /home/jeshi/out/orkut_0.5_nk 0.5
+python3 nk.py /home/jeshi/snap/orkut.edges /home/jeshi/out/orkut_1_nk 1

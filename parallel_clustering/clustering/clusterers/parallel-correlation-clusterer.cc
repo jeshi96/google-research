@@ -73,7 +73,8 @@ BestMovesForVertexSubset(
   bool async = clusterer_config.correlation_clusterer_config().async();
   std::vector<absl::optional<ClusteringHelper::ClusterId>> moves(num_nodes,
                                                                  absl::nullopt);
-  std::vector<double> moves_obj(num_nodes, 0);
+  //std::vector<double> moves_obj(num_nodes, 0);
+  std::vector<char> moved_vertex(num_nodes, 0);
 
   //pbbs::sequence<char> moves_bool(moved_subset->size(), [&](std::size_t i){
   //  if (i > ((double) moved_subset->size()) / 2.0) return 1;
@@ -82,13 +83,18 @@ BestMovesForVertexSubset(
   //auto moves_bool_shuffle = pbbs::random_shuffle(moves_bool.slice());
 
   // Find best moves per vertex in moved_subset
+  gbbs::sequence<bool> async_mark = gbbs::sequence<bool>(current_graph->n, false);
   auto moved_clusters = absl::make_unique<bool[]>(current_graph->n);
   pbbs::parallel_for(0, current_graph->n,
                      [&](std::size_t i) { moved_clusters[i] = false; });
   gbbs::vertexMap(*moved_subset, [&](std::size_t i) {
   //for (std::size_t i = 0; i < current_graph->n; i++) {
     if (async) {
-      moved_clusters[i] = helper->AsyncMove(*current_graph, i);
+      auto move = helper->AsyncMove(*current_graph, i);
+      if (move) {
+        pbbslib::CAS<bool>(&moved_clusters[helper->ClusterIds()[i]], false, true);
+        moved_vertex[i] = 1;
+      }
     } else {//if (moves_bool_shuffle[i] == 1){
     std::tuple<ClusteringHelper::ClusterId, double> best_move =
         helper->EfficientBestMove(*current_graph, i);
@@ -105,14 +111,15 @@ BestMovesForVertexSubset(
     }
     if (std::get<1>(best_move) > 0) {
       moves[i] = std::get<0>(best_move);
-      moves_obj[i] = std::get<1>(best_move);
+      //moves_obj[i] = std::get<1>(best_move);
+      moved_vertex[i] = 1;
     }
     }
   });
 
   // Compute modified clusters
   if (!async) {
-    moved_clusters = helper->MoveNodesToCluster(moves);//, moves_obj, current_graph);
+    moved_clusters = helper->MoveNodesToCluster(moves); //, moves_obj, current_graph);
     /*pbbs::parallel_for(0, num_nodes,
                        [&](std::size_t i) { moves[i] = absl::nullopt; });
     gbbs::vertexMap(*moved_subset, [&](std::size_t i) {
@@ -143,6 +150,10 @@ BestMovesForVertexSubset(
       });*/
   }
 
+
+// ***** WARNING: DEFAULT CLUSTER MOVES NOT CORRECT
+// Issues with additional moved subclustering, which should be by cluster and not by vert
+// Issues with not setting moved_vert[i]
   // Perform cluster moves
   if (clusterer_config.correlation_clusterer_config()
           .clustering_moves_method() ==
@@ -165,11 +176,21 @@ BestMovesForVertexSubset(
     if (clusterer_config.correlation_clusterer_config()
           .subclustering_method() != CorrelationClustererConfig::NONE_SUBCLUSTERING) {
       std::vector<ClusteringHelper::ClusterId> subcluster_ids(num_nodes);
-      std::size_t next_id = 0;
-      for (std::size_t i = 0; i < curr_clustering.size(); i++) {
-        next_id = ComputeSubcluster(subcluster_ids, next_id, curr_clustering[i], current_graph,
+  
+      auto next_id_seq = gbbs::sequence<std::size_t>(curr_clustering.size(), [](std::size_t i){return 0;});
+      //std::size_t next_id = 0;
+      pbbs::parallel_for(0, curr_clustering.size(), [&](std::size_t i) {
+        next_id_seq[i] = ComputeSubcluster(subcluster_ids, 0, curr_clustering[i], current_graph,
           subclustering, helper->ClusterIds(), clusterer_config);
-      }
+      });
+      // prefix sum on next_id_seq
+      auto total_next_id = pbbslib::scan_add_inplace(next_id_seq);
+      // modify subcluster_ids
+      pbbs::parallel_for(0, curr_clustering.size(), [&](std::size_t i) {
+        pbbs::parallel_for (0, curr_clustering[i].size(), [&](std::size_t j){
+          subcluster_ids[curr_clustering[i][j]] += next_id_seq[i];
+        });
+      });
       // now, do best cluster moves using subcluster ids
       std::vector<std::vector<gbbs::uintE>> curr_subclustering =
           parallel::OutputIndicesById<ClusteringHelper::ClusterId, gbbs::uintE>(
@@ -268,6 +289,17 @@ BestMovesForVertexSubset(
     });
   }
 
+  if (clusterer_config.correlation_clusterer_config().move_method() == CorrelationClustererConfig::ALL_MOVE) {
+    return std::unique_ptr<gbbs::vertexSubset, void (*)(gbbs::vertexSubset*)>(
+    new gbbs::vertexSubset(num_nodes, num_nodes,
+    gbbs::sequence<bool>(num_nodes, true).to_array()),
+    [](gbbs::vertexSubset* subset) {
+      subset->del();
+      delete subset;
+    });
+  }
+
+  bool default_move = clusterer_config.correlation_clusterer_config().move_method() == CorrelationClustererConfig::NBHR_CLUSTER_MOVE;
   // Mark vertices adjacent to clusters that have moved; these are
   // the vertices whose best moves must be recomputed.
   auto local_moved_subset =
@@ -277,7 +309,10 @@ BestMovesForVertexSubset(
               gbbs::sequence<bool>(
                   num_nodes,
                   [&](std::size_t i) {
-                    return moved_clusters[helper->ClusterIds()[i]];
+                    if (default_move)
+                      return moved_clusters[helper->ClusterIds()[i]];
+                    else
+                      return (bool) moved_vertex[i];
                   })
                   .to_array()),
           [](gbbs::vertexSubset* subset) {
@@ -319,7 +354,7 @@ bool IterateBestMoves(int num_inner_iterations, const ClustererConfig& clusterer
     local_moved = !moved_subset->isEmpty();
     moved |= local_moved;
   }
-  std::cout << "Num inner: " << local_iter + 1 << std::endl;
+  std::cout << "Num inner: " << local_iter << std::endl;
   return moved;
 }
 
@@ -398,14 +433,33 @@ absl::StatusOr<GraphWithWeights> CompressSubclusters(const ClustererConfig& clus
   ClusteringHelper* helper,
   CorrelationClustererSubclustering& subclustering,
   InMemoryClusterer::Clustering& new_clustering) {
+
   // ***** subclusters from cluster ids
   auto get_clusters = [&](gbbs::uintE i) -> gbbs::uintE { return i; };
   std::vector<std::vector<gbbs::uintE>> curr_clustering =
     parallel::OutputIndicesById<ClusteringHelper::ClusterId, gbbs::uintE>(
       local_cluster_ids, get_clusters, current_graph->n);
-  std::vector<ClusteringHelper::ClusterId> subcluster_ids(current_graph->n);
-  std::vector<std::size_t> next_ids(curr_clustering.size() + 1);
-  std::size_t next_id = 0;
+  std::vector<ClusteringHelper::ClusterId> subcluster_ids(current_graph->n, 0);
+ 
+  auto next_ids = gbbs::sequence<std::size_t>(curr_clustering.size() + 1, [](std::size_t i){return 0;});
+
+
+      pbbs::parallel_for(0, curr_clustering.size(), [&](std::size_t i) {
+        next_ids[i] = ComputeSubcluster(subcluster_ids, 0, curr_clustering[i], current_graph,
+          subclustering, local_cluster_ids, clusterer_config);
+      });
+
+      // prefix sum on next_id_seq
+      auto total_next_id = pbbslib::scan_add_inplace(next_ids);
+      // modify subcluster_ids
+      pbbs::parallel_for(0, curr_clustering.size(), [&](std::size_t i) {
+        pbbs::parallel_for (0, curr_clustering[i].size(), [&](std::size_t j){
+          subcluster_ids[curr_clustering[i][j]] += next_ids[i];
+        });
+      });
+
+
+  /*std::size_t next_id = 0;
   next_ids[0] = next_id;
   for (std::size_t i = 0; i < curr_clustering.size(); i++) {
     // When we create new local clusters, both with local_cluster_ids and helper,
@@ -414,7 +468,7 @@ absl::StatusOr<GraphWithWeights> CompressSubclusters(const ClustererConfig& clus
     next_id = ComputeSubcluster(subcluster_ids, next_id, curr_clustering[i], current_graph,
       subclustering, local_cluster_ids, clusterer_config);
     next_ids[i + 1] = next_id;
-  }
+  }*/
 
   // Create new local clusters (subcluster)
   pbbs::parallel_for(1, curr_clustering.size() + 1, [&](std::size_t i) {
@@ -423,7 +477,7 @@ absl::StatusOr<GraphWithWeights> CompressSubclusters(const ClustererConfig& clus
     }
   });
   new_clustering = parallel::OutputIndicesById<ClusteringHelper::ClusterId, gbbs::uintE>(
-    local_cluster_ids, get_clusters, next_id);
+    local_cluster_ids, get_clusters, total_next_id);
 
   return CompressGraph(*current_graph, subcluster_ids, helper);
 } 
@@ -433,6 +487,7 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
     InMemoryClusterer::Clustering* initial_clustering,
     std::vector<double> node_weights,
     gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph) const {
+pbbs::timer t; t.start();
       //std::cout << "REFINE" << std::endl;
       //fflush(stdout);
     const auto& config = clusterer_config.correlation_clusterer_config();
@@ -443,7 +498,7 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
     case CorrelationClustererConfig::DEFAULT_CLUSTER_MOVES:
       num_iterations = 1;
       num_inner_iterations =
-          config.num_iterations() > 0 ? config.num_iterations() : 64;
+          config.num_iterations() > 0 ? config.num_iterations() : 20;
       break;
     case CorrelationClustererConfig::LOUVAIN:
       num_iterations = config.louvain_config().num_iterations() > 0
@@ -491,6 +546,10 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
   for (iter = 0; iter < num_iterations; ++iter) {
     gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph =
         (iter == 0) ? graph : compressed_graph.get();
+    
+    //double max_objective2 = helper->ComputeObjective(*current_graph);
+    //std::cout << "Objective: " << max_objective2 << std::endl;
+
     // Initialize subclustering data structure
     CorrelationClustererSubclustering subclustering(clusterer_config, current_graph);
     bool moved = IterateBestMoves(num_inner_iterations, clusterer_config, current_graph,
@@ -539,10 +598,13 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
     helper = absl::make_unique<ClusteringHelper>(
         compressed_graph->n, clusterer_config,
         new_compressed_graph.node_weights, new_clustering);
+
+    //double max_objective = helper->ComputeObjective(*compressed_graph.get());
+    //std::cout << "Objective: " << max_objective << std::endl;
   }
 
   // Refine clusters up the stack
-  if (config.refine()) {
+  if (config.refine() && iter > 0) {
     auto get_clusters = [&](NodeId i) -> NodeId { return i; };
     for (int i = iter - 1; i >= 0; i--) {
       gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph =
@@ -575,7 +637,8 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
     cluster_ids = refine.recurse_helpers[0]->ClusterIds();
   }
 
-  std::cout << "Num outer: " << iter + 1 << std::endl;
+t.stop(); t.reportTotal("Actual Cluster Time: ");
+  std::cout << "Num outer: " << iter << std::endl;
 
   if (compressed_graph) compressed_graph->del();
 
@@ -593,6 +656,17 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
   // of best moves rounds
   double max_objective = helper2->ComputeObjective(*graph);
   std::cout << "Objective: " << max_objective << std::endl;
+
+  // Now, we must compute the disagreement objective
+  double max_disagreement_objective = helper2->ComputeDisagreementObjective(*graph);
+  std::cout << "Disagreement Objective: " << max_disagreement_objective << std::endl;
+
+  std::cout << "Number of Clusters: " << initial_clustering->size() << std::endl;
+
+  if (config.connect_stats()) {
+    auto num_disconnect = NumDisconnected(*initial_clustering, graph);
+    std::cout << "Number of Disconnected Clusters: " << num_disconnect << std::endl;
+  }
 
   return absl::OkStatus();
 }
@@ -781,16 +855,15 @@ if (cutoff != 0) {
       auto G_core = filterGraph(*(graph_.Graph()), pack_predicate);
       // Run RefineClusters on the sparsified graph
       // **** TODO: here we need to fix it so that the config is the modularity we want
-      // std::tuple<std::vector<double>, double, std::size_t> ComputeModularityConfig(
-  //const gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph, double resolution)
-      auto new_config_params = ComputeModularityConfig(&G_core, original_resolution);
-      ClustererConfig core_config;
-      core_config.CopyFrom(clusterer_config);
-      core_config.mutable_correlation_clusterer_config()->set_resolution(std::get<1>(new_config_params));
-      core_config.mutable_correlation_clusterer_config()->set_edge_weight_offset(0);
-      core_config.mutable_correlation_clusterer_config()->mutable_louvain_config()->set_num_inner_iterations(5);
-      core_config.mutable_correlation_clusterer_config()->mutable_louvain_config()->set_num_iterations(2);
-      RETURN_IF_ERROR(RefineClusters_subroutine(core_config, initial_clustering, std::get<0>(new_config_params), &G_core));
+      //auto new_config_params = ComputeModularityConfig(&G_core, original_resolution);
+      //ClustererConfig core_config;
+      //core_config.CopyFrom(clusterer_config);
+      //core_config.mutable_correlation_clusterer_config()->set_resolution(std::get<1>(new_config_params));
+      //core_config.mutable_correlation_clusterer_config()->set_edge_weight_offset(0);
+      //core_config.mutable_correlation_clusterer_config()->mutable_louvain_config()->set_num_inner_iterations(5);
+     // core_config.mutable_correlation_clusterer_config()->mutable_louvain_config()->set_num_iterations(2);
+      //RETURN_IF_ERROR(RefineClusters_subroutine(clusterer_config, initial_clustering, std::get<0>(new_config_params), &G_core));
+      RETURN_IF_ERROR(RefineClusters_subroutine(clusterer_config, initial_clustering, node_weights, &G_core));
 //}
       //std::cout << "START COMPRESS" << std::endl;
       // Now, redo clustering on original graph
@@ -846,6 +919,7 @@ ParallelCorrelationClusterer::Cluster(
   });
 
   RETURN_IF_ERROR(RefineClusters(clusterer_config, &clustering));
+
   return clustering;
 }
 

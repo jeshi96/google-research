@@ -28,6 +28,8 @@
 #include "clustering/clusterers/parallel-affinity.h"
 #include "clustering/clusterers/parallel-correlation-clusterer.h"
 #include "clustering/clusterers/parallel-modularity-clusterer.h"
+#include "clustering/clusterers/correlation-clusterer.h"
+#include "clustering/clusterers/modularity-clusterer.h"
 #include "clustering/config.pb.h"
 #include "clustering/in-memory-clusterer.h"
 #include "clustering/status_macros.h"
@@ -269,7 +271,12 @@ absl::Status Main() {
     clusterer.reset(new ParallelCorrelationClusterer);
   } else if (clusterer_name == "ParallelModularityClusterer") {
     clusterer.reset(new ParallelModularityClusterer);
-  } else {
+  } else if (clusterer_name == "CorrelationClusterer") {
+    clusterer.reset(new CorrelationClusterer);
+  } else if (clusterer_name == "ModularityClusterer") {
+    clusterer.reset(new ModularityClusterer);
+  }
+  else {
     return absl::UnimplementedError(
         "ParallelAffinityClusterer, ParallelCorrelationClusterer, and "
         "ParallelModularityClusterer are the only supported clusterers.");

@@ -136,6 +136,9 @@ std::unique_ptr<bool[]> MoveNodesToCluster(
   // Compute the objective of the current clustering
   double ComputeObjective(
       gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& graph);
+  
+  double ComputeDisagreementObjective(
+      gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& graph);
 
   const std::vector<ClusterId>& ClusterIds() const { return cluster_ids_; }
 
@@ -195,6 +198,9 @@ std::size_t ComputeSubcluster(std::vector<ClusteringHelper::ClusterId>& subclust
   gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph,
   CorrelationClustererSubclustering& subclustering,
   std::vector<gbbs::uintE> all_cluster_ids, const ClustererConfig& clusterer_config);
+
+std::size_t NumDisconnected(std::vector<std::vector<gbbs::uintE>>& clustering,
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph);
 
 }  // namespace in_memory
 }  // namespace research_graph

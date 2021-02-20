@@ -131,6 +131,7 @@ message CorrelationClustererConfig {
     NONE_SUBCLUSTERING = 0;
     TRIANGLE_SUBCLUSTERING = 1;
     CONNECTIVITY_SUBCLUSTERING = 2;
+    SLOW_CONNECTIVITY_SUBCLUSTERING = 3;
   }
   optional SubclusteringMethod subclustering_method = 10
       [default = NONE_SUBCLUSTERING];
@@ -147,6 +148,16 @@ message CorrelationClustererConfig {
   optional bool refine = 13;
 
   optional bool async = 14;
+
+  optional bool connect_stats = 15;
+
+  enum MoveMethod {
+    NBHR_CLUSTER_MOVE = 0;
+    ALL_MOVE = 1;
+    NBHR_MOVE = 2;
+  }
+  optional MoveMethod move_method = 16
+      [default = NBHR_CLUSTER_MOVE];
 }
 
 message KcoreConfig {

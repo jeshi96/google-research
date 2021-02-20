@@ -10,6 +10,8 @@ cc_library(
         ":parallel-affinity",
         ":parallel-correlation-clusterer",
         ":parallel-modularity-clusterer",
+        ":correlation-clusterer",
+        ":modularity-clusterer",
     ],
     alwayslink = 1,
 )
@@ -54,11 +56,51 @@ cc_library(
 )
 
 cc_library(
+    name = "correlation-clusterer",
+    srcs = ["correlation-clusterer.cc"],
+    hdrs = ["correlation-clusterer.h"],
+    deps = [
+        ":correlation-clusterer-internal",
+        ":parallel-correlation-clusterer-internal",
+        "//clustering:config_cc_proto",
+        "//clustering:gbbs-graph",
+        "//clustering:in-memory-clusterer",
+        "//clustering:status_macros",
+        "//parallel:parallel-graph-utils",
+        "@com_google_absl//absl/base",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status:statusor",
+        "@gbbs//benchmarks/KCore/JulienneDBS17:KCore",
+        "@gbbs//gbbs/pbbslib:sparse_additive_map",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "parallel-modularity-clusterer",
     srcs = ["parallel-modularity-clusterer.cc"],
     hdrs = ["parallel-modularity-clusterer.h"],
     deps = [
         ":parallel-correlation-clusterer",
+        "//clustering:config_cc_proto",
+        "//clustering:gbbs-graph",
+        "//clustering:in-memory-clusterer",
+        "//clustering:status_macros",
+        "//parallel:parallel-graph-utils",
+        "@com_google_absl//absl/base",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status:statusor",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "modularity-clusterer",
+    srcs = ["modularity-clusterer.cc"],
+    hdrs = ["modularity-clusterer.h"],
+    deps = [
+        ":correlation-clusterer",
+        ":parallel-modularity-clusterer",
         "//clustering:config_cc_proto",
         "//clustering:gbbs-graph",
         "//clustering:in-memory-clusterer",
@@ -132,5 +174,40 @@ cc_library(
         "@gbbs//pbbslib:sequence_ops",
         "@gbbs//pbbslib:utilities",
         "@gbbs//benchmarks/Connectivity/WorkEfficientSDB14:Connectivity",
+        "@gbbs//benchmarks/Connectivity/SimpleUnionAsync:Connectivity",
+        "@gbbs//gbbs/pbbslib:sparse_table",
+    ],
+)
+
+
+
+
+cc_library(
+    name = "correlation-clusterer-internal",
+    srcs = ["correlation-clusterer-internal.cc"],
+    hdrs = ["correlation-clusterer-internal.h"],
+    deps = [
+        ":correlation-clusterer-util",
+        "//clustering:config_cc_proto",
+        "//clustering:in-memory-clusterer",
+        "//parallel:parallel-graph-utils",
+        "//parallel:parallel-sequence-ops",
+        "@com_google_absl//absl/base",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
+        "@gbbs//gbbs",
+        "@gbbs//gbbs:bridge",
+        "@gbbs//gbbs:graph",
+        "@gbbs//gbbs:macros",
+        "@gbbs//gbbs:vertex_subset",
+        "@gbbs//pbbslib:random_shuffle",
+        "@gbbs//pbbslib:sample_sort",
+        "@gbbs//pbbslib:seq",
+        "@gbbs//pbbslib:sequence_ops",
+        "@gbbs//pbbslib:utilities",
+        "@gbbs//benchmarks/Connectivity/WorkEfficientSDB14:Connectivity",
+        "@gbbs//gbbs/pbbslib:sparse_table",
     ],
 )

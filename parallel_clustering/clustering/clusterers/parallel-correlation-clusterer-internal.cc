@@ -35,8 +35,10 @@
 #include "clustering/in-memory-clusterer.h"
 #include "parallel/parallel-graph-utils.h"
 #include "parallel/parallel-sequence-ops.h"
+#include "external/gbbs/gbbs/pbbslib/sparse_table.h"
 
 #include "external/gbbs/benchmarks/Connectivity/WorkEfficientSDB14/Connectivity.h"
+#include "external/gbbs/benchmarks/Connectivity/SimpleUnionAsync/Connectivity.h"
 
 namespace research_graph {
 namespace in_memory {
@@ -77,6 +79,42 @@ double ClusteringHelper::NodeWeight(NodeId id) const {
   return id < node_weights_.size() ? node_weights_[id] : 1.0;
 }
 
+double ClusteringHelper::ComputeDisagreementObjective(
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& graph) {
+  // They minimize sum of edges in b/w clusters (edge weight - res * weight i * weight j) + non-edges in cluster (res * w_i w_j)
+  const auto& config = clusterer_config_.correlation_clusterer_config();
+  std::vector<double> shifted_edge_weight(graph.n);
+
+  // Compute cluster statistics contributions of each vertex
+  pbbs::parallel_for(0, graph.n, [&](std::size_t i) {
+    gbbs::uintE cluster_id_i = cluster_ids_[i];
+    auto add_m = pbbslib::addm<double>();
+
+    auto intra_cluster_sum_map_f = [&](gbbs::uintE u, gbbs::uintE v,
+                                       float weight) -> double {
+      // This assumes that the graph is undirected, and self-loops are counted
+      // as half of the weight.
+      if (cluster_id_i != cluster_ids_[v])
+        return ((weight - config.edge_weight_offset()) / 2) - config.resolution() * node_weights_[u] * node_weights_[v];
+      else
+        return (-1 * config.resolution() * node_weights_[u] * node_weights_[v]) / 2;
+      return 0;
+    };
+    shifted_edge_weight[i] = graph.get_vertex(i).reduceOutNgh<double>(
+        i, intra_cluster_sum_map_f, add_m);
+  });
+  double objective =
+      parallel::ReduceAdd(absl::Span<const double>(shifted_edge_weight));
+
+  auto resolution_seq = pbbs::delayed_seq<double>(graph.n, [&](std::size_t i) {
+    auto cluster_weight = cluster_weights_[cluster_ids_[i]];
+    return node_weights_[i] * (cluster_weight);// - node_weights_[i]);
+  });
+  objective += config.resolution() * pbbslib::reduce_add(resolution_seq) / 2;
+  // Note that here, we're counting non-existent self-loops inside a cluster as "non-edges"
+  return objective;
+}
+
 double ClusteringHelper::ComputeObjective(
     gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& graph) {
   const auto& config = clusterer_config_.correlation_clusterer_config();
@@ -103,13 +141,130 @@ double ClusteringHelper::ComputeObjective(
 
   auto resolution_seq = pbbs::delayed_seq<double>(graph.n, [&](std::size_t i) {
     auto cluster_weight = cluster_weights_[cluster_ids_[i]];
-    return node_weights_[i] * (cluster_weight);// - node_weights_[i]);
+    return node_weights_[i] * (cluster_weight - node_weights_[i]);
   });
   objective -= config.resolution() * pbbslib::reduce_add(resolution_seq) / 2;
 
   return objective;
 }
 
+std::unique_ptr<bool[]> ClusteringHelper::MoveNodesToCluster(
+  std::vector<absl::optional<ClusterId>>& moves,
+  std::vector<double>& moves_obj,
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph) {
+  const auto& config = clusterer_config_.correlation_clusterer_config();
+  const double offset = config.edge_weight_offset();
+  const double resolution = config.resolution();
+
+  // Retrieve all nodes that are actually moving
+  auto get_moving_nodes = [&](size_t i) { return i; };
+  auto moving_nodes = pbbs::filter(
+      pbbs::delayed_seq<gbbs::uintE>(num_nodes_, get_moving_nodes),
+      [&](gbbs::uintE node) -> bool {
+        return moves[node].has_value() && moves[node] != cluster_ids_[node];
+      },
+      pbbs::no_flag);
+
+  if (moving_nodes.empty()) {
+    auto modified_cluster = absl::make_unique<bool[]>(num_nodes_);
+    pbbs::parallel_for(0, num_nodes_,
+                     [&](std::size_t i) { modified_cluster[i] = false; });
+    return modified_cluster;
+  }
+
+  // Sort moves by moves_obj
+  using M = std::tuple<gbbs::uintE, double>;
+  auto get_moves_func = [&](std::size_t j) {
+    auto i = moving_nodes[j];
+    return std::make_tuple(gbbs::uintE{i}, moves_obj[i]);
+  };
+  auto moves_sort = pbbs::sample_sort(
+      pbbs::delayed_seq<M>(moving_nodes.size(), get_moves_func),
+      [&](M a, M b) { return std::get<1>(a) > std::get<1>(b); }, true);
+  
+  //if (moves_sort.size() >= 1)
+  //std::cout << "Max is first: " << std::get<1>(moves_sort[0]) << std::endl;
+
+  // Make a rank array
+  auto rank_array = gbbs::sequence<gbbs::uintE>(num_nodes_, [](std::size_t i){return 0;});
+  pbbs::parallel_for(0, moves_sort.size(), [&](std::size_t i) {
+    rank_array[std::get<0>(moves_sort[i])] = i;
+  });
+  // If your rank is higher, then you take the objective change
+  pbbs::parallel_for(0, moves_sort.size(), [&](std::size_t i){
+    auto vtx_idx = std::get<0>(moves_sort[i]);
+    //if (moves[vtx_idx].has_value()) {
+      auto d = moves[vtx_idx].value();
+      auto c = cluster_ids_[vtx_idx];
+      double obj_change = 0;
+      auto map_moving_node_neighbors = [&](gbbs::uintE u, gbbs::uintE neighbor,
+                                       double weight) {
+      if (rank_array[u] > rank_array[neighbor] && moves[neighbor].has_value()) {
+        auto b = moves[neighbor].value();
+        auto a = cluster_ids_[neighbor];
+        if (b == d) obj_change += weight - offset;
+        if (a == d) obj_change -= weight - offset;
+        if (b == c) obj_change -= weight - offset;
+        if (a == c) obj_change += weight - offset;
+      }
+      };
+      current_graph->get_vertex(vtx_idx)
+        .mapOutNgh(vtx_idx, map_moving_node_neighbors, false);
+      moves_sort[i] = std::make_tuple(vtx_idx, std::get<1>(moves_sort[i]) + obj_change);
+    //}
+  });
+
+  // This is the inefficient n^2 thing
+  pbbs::parallel_for(0, moves_sort.size(), [&](std::size_t i) {
+    auto vtx_idx = std::get<0>(moves_sort[i]);
+    auto d = moves[vtx_idx].value();
+    auto c = cluster_ids_[vtx_idx];
+    double obj_change = 0;
+    for (std::size_t j = 0; j < i; j++) {
+      auto u_id = std::get<0>(moves_sort[j]);
+      auto b = moves[u_id].value();
+      auto a = cluster_ids_[u_id];
+      double change = -1 * resolution * node_weights_[vtx_idx] * node_weights_[u_id];
+      if (b == d) obj_change += change;
+      if (a == d) obj_change -= change;
+      if (b == c) obj_change -= change;
+      if (a == c) obj_change += change;
+    }
+    moves_sort[i] = std::make_tuple(vtx_idx, std::get<1>(moves_sort[i]) + obj_change);
+  });
+
+  // Now do a prefix sum on moves_sort
+  auto f = [](const M& a, const M& b){
+    return std::make_tuple(std::get<0>(b), std::get<1>(a) + std::get<1>(b));
+  };
+  auto prefix_sum_mon = pbbslib::make_monoid(f, std::make_tuple(gbbs::uintE{0}, double{0}));
+  auto all = pbbs::scan_inplace(moves_sort.slice(), prefix_sum_mon);
+
+  //if (moves_sort.size() >= 2)
+  //std::cout << "Max is first2: " << std::get<0>(moves_sort[1]) << ", " << std::get<1>(moves_sort[1]) << std::endl;
+  // Find the max move
+  auto f_max = [](const M& a, const M& b){
+    if (std::get<1>(a) > std::get<1>(b)) return a;
+    return b;
+  };
+  auto max_monoid = pbbs::make_monoid(f_max, std::make_tuple(gbbs::uintE{0}, double{0}));
+  auto max_move = pbbs::reduce(moves_sort.slice(), max_monoid);
+  gbbs::uintE rank_max_move = rank_array[std::get<0>(all)];
+  if (std::get<1>(max_move) > std::get<1>(all)) {
+    rank_max_move = rank_array[std::get<0>(max_move)];
+    //std::cout << "Positive Obj: " << std::get<1>(max_move) << std::endl;
+  }
+  //else {
+    //std::cout << "Positive Obj: " << std::get<1>(all) << std::endl;
+  //}
+  pbbs::parallel_for(rank_max_move + 1, moves_sort.size(), [&](std::size_t i){
+    moves[std::get<0>(moves_sort[i])] = absl::optional<ClusterId>();
+  });
+
+  return MoveNodesToCluster(moves);
+}
+
+/*
 std::unique_ptr<bool[]> ClusteringHelper::MoveNodesToCluster(
   std::vector<absl::optional<ClusterId>>& moves,
   std::vector<double>& moves_obj,
@@ -194,7 +349,7 @@ std::unique_ptr<bool[]> ClusteringHelper::MoveNodesToCluster(
   moves_sort.clear();
   return MoveNodesToCluster(moves);
   // Then, null out any moves after that -- and call MoveNodesToCluster on remaining
-}
+}*/
 
 std::unique_ptr<bool[]> ClusteringHelper::MoveNodesToCluster(
     const std::vector<absl::optional<ClusterId>>& moves) {
@@ -703,9 +858,101 @@ void CountTriangles(
   });
 }
 
+template <class Seq>
+inline size_t num_cc2(Seq& labels) {
+  size_t n = labels.size();
+  auto flags = gbbs::sequence<gbbs::uintE>(n + 1, [&](size_t i) { return 0; });
+  for (std::size_t i = 0; i < n; i ++){
+    if (!flags[labels[i]]) {
+      flags[labels[i]] = 1;
+    }
+  }
+  pbbslib::scan_add_inplace(flags);
+  //std::cout << "# n_cc = " << flags[n] << "\n";
+  return flags[n];
+}
+
+bool IsConnected(std::vector<gbbs::uintE>& cluster,
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph) {
+  auto uf = gbbs::simple_union_find::SimpleUnionAsyncStruct(cluster.size());
+  auto cluster_seq = gbbs::sequence<gbbs::uintE>(cluster.size(), [&](std::size_t i){return cluster[i];});
+  pbbs::parallel_for(0, cluster.size(), [&] (size_t i) {
+    auto map_f = [&] (const gbbs::uintE& u, const gbbs::uintE& v, const float& wgh) {
+      auto idx_v = pbbs::binary_search(cluster_seq.slice(), v, [](gbbs::uintE a, gbbs::uintE b){return a < b;});
+      if (cluster[idx_v] == v) {
+        uf.unite(i, idx_v);
+      }
+    };
+    current_graph->get_vertex(cluster[i]).mapOutNgh(cluster[i], map_f, true);
+  });
+  auto uf_result = uf.finish();
+  auto num = num_cc2(uf_result);
+  return (num > 1);
+}
+
+
+std::size_t ComputeSubclusterConnectivity(
+  std::vector<ClusteringHelper::ClusterId>& subcluster_ids,
+  std::size_t next_id, std::vector<gbbs::uintE>& cluster,
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph,
+  std::vector<gbbs::uintE> all_cluster_ids,
+  const ClustererConfig& clusterer_config) {
+  //auto cluster_id = all_cluster_ids[cluster[0]];
+  auto uf = gbbs::simple_union_find::SimpleUnionAsyncStruct(cluster.size());
+
+  /*gbbs::sequence<gbbs::uintE> id = gbbs::sequence<gbbs::uintE>(current_graph->n, UINT_E_MAX);
+  pbbs::parallel_for(0, cluster.size(), [&](size_t i) {
+    id[cluster[i]] = i;
+  });*/
+  if (cluster.size() < 1000) {
+  auto cluster_seq = gbbs::sequence<gbbs::uintE>(cluster.size(), [&](std::size_t i){return cluster[i];});
+  pbbs::parallel_for(0, cluster.size(), [&] (size_t i) {
+    auto map_f = [&] (const gbbs::uintE& u, const gbbs::uintE& v, const float& wgh) {
+      auto idx_v = pbbs::binary_search(cluster_seq.slice(), v, [](gbbs::uintE a, gbbs::uintE b){return a < b;});
+      if (cluster[idx_v] == v) {
+        uf.unite(i, idx_v);
+      }
+    };
+    current_graph->get_vertex(cluster[i]).mapOutNgh(cluster[i], map_f, true);
+  });
+  auto uf_result = uf.finish();
+  
+  pbbs::parallel_for(0, cluster.size(), [&] (size_t i) {
+    subcluster_ids[cluster[i]] = next_id + uf_result[i];
+  });
+  return cluster.size();
+  }
+
+  auto id = pbbslib::make_sparse_table(cluster.size(), std::make_tuple(UINT_E_MAX, gbbs::uintE{0}), [&] (const gbbs::uintE& k) { return pbbs::hash32(k); });
+  pbbs::parallel_for(0, cluster.size(), [&](size_t i) {
+    id.insert({cluster[i], gbbs::uintE{i}});
+  });
+  /*gbbs::sequence<gbbs::uintE> id = gbbs::sequence<gbbs::uintE>(current_graph->n, UINT_E_MAX);
+  pbbs::parallel_for(0, cluster.size(), [&](size_t i) {
+    id[cluster[i]] = i;
+  });*/
+
+  pbbs::parallel_for(0, cluster.size(), [&] (size_t i) {
+    auto map_f = [&] (const gbbs::uintE& u, const gbbs::uintE& v, const float& wgh) {
+      auto find = id.find(v, UINT_E_MAX);
+      if (find != UINT_E_MAX) {
+        uf.unite(i, find);
+      }
+    };
+    current_graph->get_vertex(cluster[i]).mapOutNgh(cluster[i], map_f, true);
+  });
+  auto uf_result = uf.finish();
+  
+  pbbs::parallel_for(0, cluster.size(), [&] (size_t i) {
+    subcluster_ids[cluster[i]] = next_id + uf_result[i];
+  });
+  return cluster.size();
+}
+
+
 // For each cluster, compute the subcluster ids
 // return the next subcluster id
-std::size_t ComputeSubclusterConnectivity(
+std::size_t ComputeSubclusterConnectivitySlow(
   std::vector<ClusteringHelper::ClusterId>& subcluster_ids,
   std::size_t next_id, std::vector<gbbs::uintE>& cluster,
   gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph,
@@ -924,6 +1171,16 @@ std::size_t ComputeSubclusterTriangle(std::vector<ClusteringHelper::ClusterId>& 
 
 }  // namespace internal
 
+
+std::size_t NumDisconnected(std::vector<std::vector<gbbs::uintE>>& clustering,
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph) {
+  auto flags = gbbs::sequence<gbbs::uintE>(clustering.size(), [&](std::size_t i) { return 0; });
+  pbbs::parallel_for(0, clustering.size(), [&](std::size_t i){
+    flags[i] = gbbs::uintE{IsConnected(clustering[i], current_graph)};
+  });
+  return pbbslib::reduce_add(flags);
+}
+
 CorrelationClustererSubclustering::CorrelationClustererSubclustering(
   const ClustererConfig& clusterer_config,
   gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph){
@@ -945,11 +1202,16 @@ std::size_t ComputeSubcluster(std::vector<ClusteringHelper::ClusterId>& subclust
   CorrelationClustererSubclustering& subclustering,
   std::vector<gbbs::uintE> all_cluster_ids, const ClustererConfig& clusterer_config) {
 
-  bool use_connectivity = (clusterer_config.correlation_clusterer_config()
-    .subclustering_method() == CorrelationClustererConfig::CONNECTIVITY_SUBCLUSTERING);
-  return use_connectivity ? 
-    ComputeSubclusterConnectivity(subcluster_ids, next_id, cluster,
-      current_graph, all_cluster_ids, clusterer_config) :
+  if (clusterer_config.correlation_clusterer_config()
+    .subclustering_method() == CorrelationClustererConfig::CONNECTIVITY_SUBCLUSTERING) {
+      return ComputeSubclusterConnectivity(subcluster_ids, next_id, cluster,
+      current_graph, all_cluster_ids, clusterer_config);
+    } else if (clusterer_config.correlation_clusterer_config()
+    .subclustering_method() == CorrelationClustererConfig::SLOW_CONNECTIVITY_SUBCLUSTERING) {
+      return ComputeSubclusterConnectivitySlow(subcluster_ids, next_id, cluster,
+      current_graph, all_cluster_ids, clusterer_config);
+    }
+  return 
     ComputeSubclusterTriangle(subcluster_ids, next_id, cluster,
                       current_graph, subclustering,
                       all_cluster_ids);

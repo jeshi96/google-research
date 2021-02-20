@@ -44,6 +44,9 @@ std::vector<gbbs::uintE> GetOffsets(
 std::tuple<std::vector<double>, double, std::size_t> ComputeModularityConfig(
   gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph, double resolution);
 
+std::tuple<std::vector<double>, double, std::size_t> SeqComputeModularityConfig(
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph, double resolution);
+
 // Using parallel sorting, compute inter cluster edges given a set of
 // cluster_ids that form the vertices of the new graph. Uses aggregate_func
 // to combine multiple edges on the same cluster ids. Returns sorted
@@ -76,6 +79,29 @@ MakeGbbsGraph(
     gbbs::vertex_data vertex_data{offsets[i], offsets[i + 1] - offsets[i]};
     vertices[i] = gbbs::symmetric_vertex<WeightType>(edges, vertex_data);
   });
+
+  return std::make_unique<
+      gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, WeightType>>(
+      num_vertices, num_edges, vertices, [=]() {
+        delete[] vertices;
+        delete[] edges;
+      });
+}
+
+template <typename WeightType>
+std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, WeightType>>
+SeqMakeGbbsGraph(
+    const std::vector<gbbs::uintE>& offsets, std::size_t num_vertices,
+    std::unique_ptr<std::tuple<gbbs::uintE, WeightType>[]> edges_pointer,
+    std::size_t num_edges) {
+  gbbs::symmetric_vertex<WeightType>* vertices =
+      new gbbs::symmetric_vertex<WeightType>[num_vertices];
+  auto edges = edges_pointer.release();
+
+  for (std::size_t i = 0; i < num_vertices; i++) {
+    gbbs::vertex_data vertex_data{offsets[i], offsets[i + 1] - offsets[i]};
+    vertices[i] = gbbs::symmetric_vertex<WeightType>(edges, vertex_data);
+  }
 
   return std::make_unique<
       gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, WeightType>>(
