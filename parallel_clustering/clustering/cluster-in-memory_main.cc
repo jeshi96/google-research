@@ -77,30 +77,6 @@ double DoubleFromWeight(double weight) { return weight; }
 float FloatFromWeight(float weight) { return weight; }
 float FloatFromWeight(pbbslib::empty weight) { return 1; }
 
-template <class Graph>
-absl::Status GbbsGraphToInMemoryClustererGraph(InMemoryClusterer::Graph* graph,
-                                               Graph& gbbs_graph) {
-  using weight_type = typename Graph::weight_type;
-  for (std::size_t i = 0; i < gbbs_graph.n; i++) {
-    auto vertex = gbbs_graph.get_vertex(i);
-    std::vector<std::pair<gbbs::uintE, double>> outgoing_edges(
-        vertex.getOutDegree());
-    gbbs::uintE index = 0;
-    auto add_outgoing_edge = [&](gbbs::uintE, const gbbs::uintE neighbor,
-                                 weight_type wgh) {
-      outgoing_edges[index] = std::make_pair(
-        static_cast<gbbs::uintE>(neighbor), DoubleFromWeight(wgh));
-      index++;
-    };
-    vertex.mapOutNgh(i, add_outgoing_edge, false);
-    InMemoryClusterer::Graph::AdjacencyList adjacency_list{
-        static_cast<InMemoryClusterer::NodeId>(i), 1,
-        std::move(outgoing_edges)};
-    RETURN_IF_ERROR(graph->Import(adjacency_list));
-  }
-  RETURN_IF_ERROR(graph->FinishImport());
-  return absl::OkStatus();
-}
 
 template <typename Weight>
 absl::StatusOr<std::size_t> WriteEdgeListAsGraph(

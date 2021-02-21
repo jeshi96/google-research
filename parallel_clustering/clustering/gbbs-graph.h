@@ -39,16 +39,6 @@ namespace in_memory {
 template<class ClusterGraph>
 class GbbsGraph : public InMemoryClusterer<ClusterGraph>::Graph {
  public:
-  // Stores the node and edge information in nodes_ and edges_
-  absl::Status Import(AdjacencyList adjacency_list) override{
-  return absl::OkStatus();
-}
-
-  // Constructs graph_ using nodes_ and edges_
-  absl::Status FinishImport() override{
-  return absl::OkStatus();
-}
-
   ClusterGraph* Graph() const{
   return graph_.get();
 }

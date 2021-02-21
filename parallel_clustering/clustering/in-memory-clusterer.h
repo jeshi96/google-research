@@ -43,31 +43,11 @@ class InMemoryClusterer {
    public:
     using NodeId = gbbs::uintE;
 
-    // Represents a weighted node with weighted outgoing edges.
-    struct AdjacencyList {
-      NodeId id = -1;
-      double weight = 1;
-      std::vector<std::pair<NodeId, double>> outgoing_edges;
-    };
-
     std::unique_ptr<ClusterGraph>
       graph_;
 
     virtual ~Graph() = default;
 
-    // Adds a weighted node and its weighted out-edges to the graph. Depending
-    // on the Graph implementation, the symmetric edges may be added as well,
-    // and edge weights may be adjusted for symmetry.
-    //
-    // Import must be called at most once for each node. If not called for a
-    // node, that node defaults to weight 1.
-    //
-    // IMPLEMENTATIONS MUST ALLOW CONCURRENT CALLS TO Import()!
-    virtual absl::Status Import(AdjacencyList adjacency_list) = 0;
-
-    virtual absl::Status FinishImport(){
-  return absl::OkStatus();
-}
   };
 
   using NodeId = typename Graph::NodeId;
