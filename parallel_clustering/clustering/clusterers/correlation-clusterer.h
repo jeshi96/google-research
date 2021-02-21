@@ -32,7 +32,7 @@
 namespace research_graph {
 namespace in_memory {
 
-
+using Clustering = std::vector<std::vector<gbbs::uintE>>;
 
 namespace {
 
@@ -190,7 +190,7 @@ class CorrelationClusterer : public InMemoryClusterer<ClusterGraph> {
  public:
   using ClusterId = gbbs::uintE;
 
-  Graph* MutableGraph() override { return &graph_; }
+  ClusterGraph* MutableGraph() override { return &graph_; }
 
   absl::StatusOr<Clustering> Cluster(
       const ClustererConfig& config) const override{
