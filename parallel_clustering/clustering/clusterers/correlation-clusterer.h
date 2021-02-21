@@ -85,6 +85,13 @@ std::vector<gbbs::uintE> SeqFlattenClustering(
 float FloatFromWeightCC(float weight) { return weight; }
 float FloatFromWeightCC(pbbslib::empty weight) { return 1; }
 
+struct CorrelationClustererRefine2 {
+  using H = std::unique_ptr<SeqClusteringHelper>;
+  using G = std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>;
+  gbbs::sequence<H> recurse_helpers = gbbs::sequence<H>(0, [](std::size_t i){return H(nullptr);});
+  gbbs::sequence<G> recurse_graphs = gbbs::sequence<G>(0, [](std::size_t i){return G(nullptr);});
+  bool use_refine = false;
+};
 
 // Given a vertex subset moved_subset, computes best moves for all vertices
 // and performs the moves. Returns a vertex subset consisting of all vertices
@@ -226,7 +233,7 @@ pbbs::timer t; t.start();
   }
 
   // Initialize refinement data structure
-  CorrelationClustererRefine refine{};
+  CorrelationClustererRefine2 refine{};
   if (config.refine()) {
     using H = std::unique_ptr<SeqClusteringHelper>;
     using GX = std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>;
