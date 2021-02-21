@@ -464,10 +464,7 @@ t.stop(); t.reportTotal("Actual Cluster Time: ");
 
   std::cout << "Number of Clusters: " << initial_clustering->size() << std::endl;
 
-  if (config.connect_stats()) {
-    auto num_disconnect = NumDisconnected(*initial_clustering, graph);
-    std::cout << "Number of Disconnected Clusters: " << num_disconnect << std::endl;
-  }
+
 
   return absl::OkStatus();
 }
