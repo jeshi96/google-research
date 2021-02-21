@@ -195,19 +195,6 @@ protected:
  public:
   using ClusterId = gbbs::uintE;
 
-  absl::StatusOr<Clustering> Cluster(
-      const ClustererConfig& config) const override{
-  Clustering clustering(graph_.Graph()->n);
-
-  // Create all-singletons initial clustering
-  for (std::size_t i = 0; i < graph_.Graph()->n; i++) {
-    clustering[i] = {static_cast<gbbs::uintE>(i)};
-  }
-
-  RETURN_IF_ERROR(RefineClusters(config, &clustering));
-
-  return clustering;
-}
 
   // initial_clustering must include every node in the range
   // [0, MutableGraph().NumNodes()) exactly once.
@@ -453,6 +440,19 @@ template<class G>
   }
 
 
+  absl::StatusOr<Clustering> Cluster(
+      const ClustererConfig& config) const override{
+  Clustering clustering(graph_.Graph()->n);
+
+  // Create all-singletons initial clustering
+  for (std::size_t i = 0; i < graph_.Graph()->n; i++) {
+    clustering[i] = {static_cast<gbbs::uintE>(i)};
+  }
+
+  RETURN_IF_ERROR(RefineClusters(config, &clustering));
+
+  return clustering;
+}
 
 };
 

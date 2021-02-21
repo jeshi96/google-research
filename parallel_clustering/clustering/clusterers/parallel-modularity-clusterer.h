@@ -36,7 +36,7 @@ using Clustering = std::vector<std::vector<gbbs::uintE>>;
 
 template<class G>
 double ComputeModularity(
-InMemoryClusterer::Clustering& initial_clustering,
+Clustering& initial_clustering,
 G& graph,
 double total_edge_weight, std::vector<gbbs::uintE>& cluster_ids,
 double resolution){
@@ -80,7 +80,7 @@ class ParallelModularityClusterer : public ParallelCorrelationClusterer<ClusterG
 
   absl::StatusOr<Clustering> Cluster(
       const ClustererConfig& config) const override{
-  InMemoryClusterer::Clustering clustering(graph_.Graph()->n);
+  Clustering clustering(graph_.Graph()->n);
 
   // Create all-singletons initial clustering
   pbbs::parallel_for(0, graph_.Graph()->n, [&](std::size_t i) {

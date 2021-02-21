@@ -175,18 +175,7 @@ class ParallelCorrelationClusterer : public InMemoryClusterer<ClusterGraph> {
  public:
   using ClusterId = gbbs::uintE;
 
-  absl::StatusOr<Clustering> Cluster(
-      const ClustererConfig& config) const override{
-  Clustering clustering(graph_.Graph()->n);
-  // Create all-singletons initial clustering
-  pbbs::parallel_for(0, graph_.Graph()->n, [&](std::size_t i) {
-    clustering[i] = {static_cast<gbbs::uintE>(i)};
-  });
 
-  RETURN_IF_ERROR(RefineClusters(clusterer_config, &clustering));
-
-  return clustering;
-}
 
   // initial_clustering must include every node in the range
   // [0, MutableGraph().NumNodes()) exactly once.
@@ -369,7 +358,7 @@ t.stop(); t.reportTotal("Actual Cluster Time: ");
   absl::Status RefineClusters_subroutine(
     const ClustererConfig& clusterer_config,
     Clustering* initial_clustering,
-    Graph* graph) const{
+    Graph* graph) {
   std::vector<double> empty;
   return RefineClusters_subroutine(clusterer_config, initial_clustering, empty, graph);
 }
@@ -421,7 +410,18 @@ template<class G>
   return RefineClusters(clusterer_config, initial_clustering, empty);
   }
 
+  absl::StatusOr<Clustering> Cluster(
+      const ClustererConfig& clusterer_config) const override{
+  Clustering clustering(graph_.Graph()->n);
+  // Create all-singletons initial clustering
+  pbbs::parallel_for(0, graph_.Graph()->n, [&](std::size_t i) {
+    clustering[i] = {static_cast<gbbs::uintE>(i)};
+  });
 
+  RETURN_IF_ERROR(RefineClusters(clusterer_config, &clustering));
+
+  return clustering;
+}
 
 
 };
