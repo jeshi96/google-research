@@ -68,8 +68,8 @@ class InMemoryClusterer {
     virtual absl::Status FinishImport();
   };
 
-  using NodeId = Graph::NodeId;
-  using AdjacencyList = Graph::AdjacencyList;
+  using NodeId = typename Graph::NodeId;
+  using AdjacencyList = typename Graph::AdjacencyList;
 
   // Represents clustering: each element of the vector contains the set of
   // NodeIds in one cluster. We call a clustering non-overlapping if the
