@@ -319,7 +319,7 @@ template<class Graph>
     auto add_m = pbbslib::addm<double>();
 
     auto intra_cluster_sum_map_f = [&](gbbs::uintE u, gbbs::uintE v,
-                                       W weight){
+                                       W weight) -> double{
       // This assumes that the graph is undirected, and self-loops are counted
       // as half of the weight.
       if (cluster_id_i == cluster_ids_[v])
@@ -357,7 +357,7 @@ template<class Graph>
     auto add_m = pbbslib::addm<double>();
 
     auto intra_cluster_sum_map_f = [&](gbbs::uintE u, gbbs::uintE v,
-                                      W w){
+                                      W w) -> double{
       float weight = FloatFromWeightPCCI(w);
       // This assumes that the graph is undirected, and self-loops are counted
       // as half of the weight.
