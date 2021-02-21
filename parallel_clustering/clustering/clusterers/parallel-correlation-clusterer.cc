@@ -194,7 +194,7 @@ BestMovesForVertexSubset(
 }
 
 bool IterateBestMoves(int num_inner_iterations, const ClustererConfig& clusterer_config,
-  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph) {
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph, ClusteringHelper* helper) {
   const auto num_nodes = current_graph->n;
   bool moved = false;
   bool local_moved = true;
