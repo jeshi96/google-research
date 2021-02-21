@@ -562,7 +562,7 @@ std::tuple<ClusteringHelper::ClusterId, double> ClusteringHelper::EfficientBestM
   const double offset = config.edge_weight_offset();
 
   auto deg = graph.get_vertex(moving_node).getOutDegree();
-  auto curr_together_seq = gbbs::sequence<double>(deg, 0);
+  auto curr_together_seq = gbbs::sequence<double>(deg, [](std::size_t i){return double{0};});
 
   auto together_after_table = pbbslib::sparse_additive_map(deg, std::make_tuple(UINT_E_MAX, double{0}));
 
