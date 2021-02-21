@@ -34,6 +34,8 @@
 namespace research_graph {
 namespace in_memory {
 
+using Clustering = std::vector<std::vector<gbbs::uintE>>;
+
 // A local-search based clusterer optimizing the correlation clustering
 // objective. See comment above CorrelationClustererConfig in
 // ../config.proto for more. This uses the CorrelationClustererConfig proto.

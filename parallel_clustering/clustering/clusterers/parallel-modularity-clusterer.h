@@ -32,6 +32,8 @@
 namespace research_graph {
 namespace in_memory {
 
+using Clustering = std::vector<std::vector<gbbs::uintE>>;
+
 template<class G>
 double ComputeModularity(
 InMemoryClusterer::Clustering& initial_clustering,

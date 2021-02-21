@@ -190,8 +190,6 @@ class CorrelationClusterer : public InMemoryClusterer<ClusterGraph> {
  public:
   using ClusterId = gbbs::uintE;
 
-  ClusterGraph* MutableGraph() override { return &graph_; }
-
   absl::StatusOr<Clustering> Cluster(
       const ClustererConfig& config) const override{
   Clustering clustering(graph_.Graph()->n);

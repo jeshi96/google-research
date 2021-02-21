@@ -158,6 +158,7 @@ bool IterateBestMoves(int num_inner_iterations, const ClustererConfig& clusterer
 }
 }  // namespace
 
+using Clustering = std::vector<std::vector<gbbs::uintE>>;
 
 // A local-search based clusterer optimizing the correlation clustering
 // objective. See comment above CorrelationClustererConfig in
@@ -167,8 +168,6 @@ template<class ClusterGraph>
 class ParallelCorrelationClusterer : public InMemoryClusterer<ClusterGraph> {
  public:
   using ClusterId = gbbs::uintE;
-
-  Graph* MutableGraph() override { return &graph_; }
 
   absl::StatusOr<Clustering> Cluster(
       const ClustererConfig& config) const override{
