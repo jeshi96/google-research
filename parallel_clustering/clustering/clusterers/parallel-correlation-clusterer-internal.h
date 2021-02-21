@@ -326,7 +326,7 @@ template<class Graph>
         return (FloatFromWeightPCCI(weight) - config.edge_weight_offset()) / 2;
       return 0;
     };
-    shifted_edge_weight[i] = graph.get_vertex(i).reduceOutNgh(
+    shifted_edge_weight[i] = graph.get_vertex(i).reduceOutNgh<double>(
         i, intra_cluster_sum_map_f, add_m);
   });
   double objective =
@@ -366,7 +366,7 @@ template<class Graph>
         return (-1 * config.resolution() * node_weights_[u] * node_weights_[v]) / 2;
       return 0;
     };
-    shifted_edge_weight[i] = graph.get_vertex(i).reduceOutNgh(
+    shifted_edge_weight[i] = graph.get_vertex(i).reduceOutNgh<double>(
         i, intra_cluster_sum_map_f, add_m);
   });
   double objective =
