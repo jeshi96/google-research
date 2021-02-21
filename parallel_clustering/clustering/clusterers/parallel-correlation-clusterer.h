@@ -173,7 +173,7 @@ class ParallelCorrelationClusterer : public InMemoryClusterer<ClusterGraph>{
   public:
   GbbsGraph<ClusterGraph> graph_;
 
-  InMemoryClusterer<ClusterGraph>::Graph* MutableGraph() override { return &graph_; }
+  GbbsGraph<ClusterGraph>* MutableGraph() override { return &graph_; }
  
   using ClusterId = gbbs::uintE;
 
