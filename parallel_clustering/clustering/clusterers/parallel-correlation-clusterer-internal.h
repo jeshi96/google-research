@@ -47,9 +47,11 @@
 namespace research_graph {
 namespace in_memory {
 
-
+namespace {
 float FloatFromWeightPCCI(float weight) { return weight; }
 float FloatFromWeightPCCI(pbbslib::empty weight) { return 1; }
+}
+
 using ClusterId = gbbs::uintE;
 
 // This class encapsulates the data needed to compute and maintain the
