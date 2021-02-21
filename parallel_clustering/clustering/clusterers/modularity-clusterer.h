@@ -80,7 +80,7 @@ t.stop(); t.reportTotal("Actual Modularity Config Time: ");
 }
 
   absl::StatusOr<Clustering> Cluster(
-      const ClustererConfig& config) const override{
+      const ClustererConfig& clusterer_config) const override{
   Clustering clustering(graph_.Graph()->n);
 
   // Create all-singletons initial clustering
