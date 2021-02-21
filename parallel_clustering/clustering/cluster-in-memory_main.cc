@@ -288,22 +288,23 @@ auto begin_read = std::chrono::steady_clock::now();
   bool float_weighted = absl::GetFlag(FLAGS_float_weighted);
   std::size_t n = 0;
 
-  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float> g;
   if (float_weighted) {
     auto G = gbbs::gbbs_io::read_weighted_symmetric_graph<float>(
             input_file.c_str(), false);
     gbbs::alloc_init(G);
     // Transform to pointer graph
     n = G.n;
-    g = CopyGraph(G);
+    clusterer->MutableGraph()->graph_ = absl::make_unique<gbbs::symmetric_graph<gbbs::symmetric_vertex, float>>(G);
+    //g = CopyGraph(G);
   } else {
     auto G = gbbs::gbbs_io::read_unweighted_symmetric_graph(input_file.c_str(), false);
     gbbs::alloc_init(G);
     // Transform to pointer graph
     n = G.n;
-    g = CopyGraph(G);
+    clusterer->MutableGraph()->graph_ = absl::make_unique<gbbs::symmetric_graph<gbbs::symmetric_vertex, pbbslib::empty>>(G);
+    //g = CopyGraph(G);
   }
-  clusterer->MutableGraph()->graph_ = absl::make_unique<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>(g);
+  //clusterer->MutableGraph()->graph_ = absl::make_unique<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>(g);
   /*if (float_weighted) {
     const auto edge_list{
         gbbs::gbbs_io::read_weighted_edge_list<float>(input_file.c_str())};
