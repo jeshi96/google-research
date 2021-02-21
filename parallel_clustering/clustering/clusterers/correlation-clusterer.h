@@ -33,6 +33,7 @@ namespace research_graph {
 namespace in_memory {
 
 using Clustering = std::vector<std::vector<gbbs::uintE>>;
+using NodeId = gbbs::uintE;
 
 namespace {
 
