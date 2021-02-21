@@ -29,6 +29,7 @@
 #include "clustering/in-memory-clusterer.h"
 
 #include "parallel-correlation-clusterer-internal.h"
+#include "clustering/clusterers/parallel-correlation-clusterer-internal.h"
 
 namespace research_graph {
 namespace in_memory {
