@@ -562,6 +562,78 @@ std::tuple<ClusteringHelper::ClusterId, double> ClusteringHelper::EfficientBestM
   const double offset = config.edge_weight_offset();
 
   auto deg = graph.get_vertex(moving_node).getOutDegree();
+
+  if (deg <= 1000) {
+  // Class 2 edges where the endpoints are currently in different clusters.
+  //EdgeSum class_2_currently_separate;
+  // Class 1 edges where the endpoints are currently in the same cluster.
+  EdgeSum class_1_currently_together;
+  // Class 1 edges, grouped by the cluster that the non-moving node is in.
+  absl::flat_hash_map<ClusterId, EdgeSum> class_1_together_after;
+
+  double moving_nodes_weight = 0;
+  const ClusterId node_cluster = cluster_ids_[moving_node];
+  //cluster_moving_weights[node_cluster] += node_weights_[moving_node];
+  moving_nodes_weight += node_weights_[moving_node];
+  auto map_moving_node_neighbors = [&](gbbs::uintE u, gbbs::uintE neighbor,
+                                       double weight) {
+    weight -= offset;
+    const ClusterId neighbor_cluster = cluster_ids_[neighbor];
+    /*if (moving_node == neighbor) {
+      // Class 2 edge.
+      if (node_cluster != neighbor_cluster) {
+        class_2_currently_separate.Add(weight);
+      }
+    } else*/ if (moving_node != neighbor) {
+      // Class 1 edge.
+      if (node_cluster == neighbor_cluster) {
+        class_1_currently_together.Add(weight);
+      }
+      class_1_together_after[neighbor_cluster].Add(weight);
+    }
+  };
+  graph.get_vertex(moving_node)
+      .mapOutNgh(moving_node, map_moving_node_neighbors, false);
+  //class_2_currently_separate.RemoveDoubleCounting();
+  // Now cluster_moving_weights is correct and class_2_currently_separate,
+  // class_1_currently_together, and class_1_by_cluster are ready to call
+  // NetWeight().
+
+ double change_in_objective = 0;
+
+  double max_edges = 0;
+  //change_in_objective += class_2_currently_separate.NetWeight(max_edges, config);
+
+  max_edges = node_weights_[moving_node] *
+              (cluster_weights_[node_cluster] - node_weights_[moving_node]);
+  change_in_objective -= class_1_currently_together.NetWeight(max_edges, config);
+
+  std::pair<absl::optional<ClusterId>, double> best_move;
+  best_move.first = absl::nullopt;
+  best_move.second = change_in_objective;
+  for (const auto& [cluster, data] : class_1_together_after) {
+    max_edges = moving_nodes_weight * (cluster_weights_[cluster]);
+    // Change in objective if we move the moving nodes to cluster i.
+    double overall_change_in_objective =
+        change_in_objective + data.NetWeight(max_edges, config);
+    if (overall_change_in_objective > best_move.second ||
+        (overall_change_in_objective == best_move.second &&
+         cluster < best_move.first)) {
+      best_move.first = cluster;
+      best_move.second = overall_change_in_objective;
+    }
+  }
+
+  auto move_id =
+      best_move.first.has_value() ? best_move.first.value() : graph.n;
+  std::tuple<ClusterId, double> best_move_tuple =
+      std::make_tuple(move_id, best_move.second);
+
+  return best_move_tuple;
+  }
+
+
+
   auto curr_together_seq = gbbs::sequence<double>(deg, [](std::size_t i){return double{0};});
 
   auto together_after_table = pbbslib::sparse_additive_map(deg, std::make_tuple(UINT_E_MAX, double{0}));
