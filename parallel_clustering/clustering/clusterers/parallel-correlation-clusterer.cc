@@ -70,8 +70,7 @@ std::unique_ptr<gbbs::vertexSubset, void (*)(gbbs::vertexSubset*)>
 BestMovesForVertexSubset(
     gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph,
     std::size_t num_nodes, gbbs::vertexSubset* moved_subset,
-    ClusteringHelper* helper, const ClustererConfig& clusterer_config,
-    CorrelationClustererSubclustering& subclustering) {
+    ClusteringHelper* helper, const ClustererConfig& clusterer_config) {
   bool async = clusterer_config.correlation_clusterer_config().async();
   std::vector<absl::optional<ClusteringHelper::ClusterId>> moves(num_nodes,
                                                                  absl::nullopt);
@@ -153,144 +152,6 @@ BestMovesForVertexSubset(
   }
 
 
-// ***** WARNING: DEFAULT CLUSTER MOVES NOT CORRECT
-// Issues with additional moved subclustering, which should be by cluster and not by vert
-// Issues with not setting moved_vert[i]
-  // Perform cluster moves
-  if (clusterer_config.correlation_clusterer_config()
-          .clustering_moves_method() ==
-      CorrelationClustererConfig::DEFAULT_CLUSTER_MOVES) {
-    // Reset moves
-    if (!async) {
-      pbbs::parallel_for(0, num_nodes,
-                       [&](std::size_t i) { moves[i] = absl::nullopt; });
-    }
-
-    // Aggregate clusters
-    auto get_clusters = [&](gbbs::uintE i) -> gbbs::uintE { return i; };
-    std::vector<std::vector<gbbs::uintE>> curr_clustering =
-        parallel::OutputIndicesById<ClusteringHelper::ClusterId, gbbs::uintE>(
-            helper->ClusterIds(), get_clusters, helper->ClusterIds().size());
-
-    // ********* sub clusters
-    // Compute sub-clusters by taking existing clusters and running
-    // connected components on each cluster with triangle reweighting
-    if (clusterer_config.correlation_clusterer_config()
-          .subclustering_method() != CorrelationClustererConfig::NONE_SUBCLUSTERING) {
-      std::vector<ClusteringHelper::ClusterId> subcluster_ids(num_nodes);
-  
-      auto next_id_seq = gbbs::sequence<std::size_t>(curr_clustering.size(), [](std::size_t i){return 0;});
-      //std::size_t next_id = 0;
-      pbbs::parallel_for(0, curr_clustering.size(), [&](std::size_t i) {
-        next_id_seq[i] = ComputeSubcluster(subcluster_ids, 0, curr_clustering[i], current_graph,
-          subclustering, helper->ClusterIds(), clusterer_config);
-      });
-      // prefix sum on next_id_seq
-      auto total_next_id = pbbslib::scan_add_inplace(next_id_seq);
-      // modify subcluster_ids
-      pbbs::parallel_for(0, curr_clustering.size(), [&](std::size_t i) {
-        pbbs::parallel_for (0, curr_clustering[i].size(), [&](std::size_t j){
-          subcluster_ids[curr_clustering[i][j]] += next_id_seq[i];
-        });
-      });
-      // now, do best cluster moves using subcluster ids
-      std::vector<std::vector<gbbs::uintE>> curr_subclustering =
-          parallel::OutputIndicesById<ClusteringHelper::ClusterId, gbbs::uintE>(
-              subcluster_ids, get_clusters, num_nodes);
-      // Compute best move per subcluster
-      auto additional_moved_subclusters = absl::make_unique<bool[]>(current_graph->n);
-      if (async) {
-      pbbs::parallel_for(0, current_graph->n,
-                     [&](std::size_t i) { additional_moved_subclusters[i] = false; });
-      }
-      pbbs::parallel_for(0, curr_subclustering.size(), [&](std::size_t i) {
-        if (!curr_subclustering[i].empty()) {
-          if (async) {
-            bool move_flag = helper->AsyncMove(*current_graph, curr_subclustering[i]);
-            if (move_flag) {
-              pbbs::parallel_for(0, curr_subclustering[i].size(), [&](std::size_t j) {
-                additional_moved_subclusters[curr_clustering[i][j]] = true;
-              });
-            }
-          }
-          else {
-          std::tuple<ClusteringHelper::ClusterId, double> best_move =
-              helper->BestMove(*current_graph, curr_subclustering[i]);
-          // If a cluster wishes to move to another cluster,
-          // only move if the id of the moving cluster is lower than the id
-          // of the cluster it wishes to move to
-          auto move_cluster_id = std::get<0>(best_move);
-          auto current_cluster_id =
-              helper->ClusterIds()[curr_subclustering[i].front()];
-          if (move_cluster_id < current_graph->n &&
-              current_cluster_id >= move_cluster_id) {
-            best_move = std::make_tuple(current_cluster_id, 0);
-          }
-          if (std::get<1>(best_move) > 0) {
-            for (size_t j = 0; j < curr_subclustering[i].size(); j++) {
-              moves[curr_subclustering[i][j]] = std::get<0>(best_move);
-            }
-          }
-          }
-        }
-      });
-      // Compute modified subclusters
-      if (!async) additional_moved_subclusters = helper->MoveNodesToCluster(moves);
-      pbbs::parallel_for(0, num_nodes, [&](std::size_t i) {
-        moved_clusters[i] |= additional_moved_subclusters[i];
-      });
-      // Reset moves
-      if (!async) {
-        pbbs::parallel_for(0, num_nodes,
-                         [&](std::size_t i) { moves[i] = absl::nullopt; });
-      }
-    }
-    // ******** end sub clusters
-
-    // Compute best move per cluster
-    auto additional_moved_clusters = absl::make_unique<bool[]>(current_graph->n);
-    if (async) {
-    pbbs::parallel_for(0, current_graph->n,
-                     [&](std::size_t i) { additional_moved_clusters[i] = false; });
-    }
-    pbbs::parallel_for(0, curr_clustering.size(), [&](std::size_t i) {
-      if (!curr_clustering[i].empty()) {
-        if (async) {
-          bool move_flag = helper->AsyncMove(*current_graph, curr_clustering[i]);
-          if (move_flag) {
-            pbbs::parallel_for(0, curr_clustering[i].size(), [&](std::size_t j) {
-              additional_moved_clusters[curr_clustering[i][j]] = true;
-            });
-          }
-        } else {
-          std::tuple<ClusteringHelper::ClusterId, double> best_move =
-            helper->BestMove(*current_graph, curr_clustering[i]);
-          // If a cluster wishes to move to another cluster,
-          // only move if the id of the moving cluster is lower than the id
-          // of the cluster it wishes to move to
-          auto move_cluster_id = std::get<0>(best_move);
-          auto current_cluster_id =
-            helper->ClusterIds()[curr_clustering[i].front()];
-          if (move_cluster_id < current_graph->n &&
-            current_cluster_id >= move_cluster_id) {
-            best_move = std::make_tuple(current_cluster_id, 0);
-          }
-          if (std::get<1>(best_move) > 0) {
-            for (size_t j = 0; j < curr_clustering[i].size(); j++) {
-              moves[curr_clustering[i][j]] = std::get<0>(best_move);
-            }
-          }
-        }
-      }
-    });
-
-    // Compute modified clusters
-    if(!async) additional_moved_clusters = helper->MoveNodesToCluster(moves);
-    pbbs::parallel_for(0, num_nodes, [&](std::size_t i) {
-      moved_clusters[i] |= additional_moved_clusters[i];
-    });
-  }
-
   if (clusterer_config.correlation_clusterer_config().move_method() == CorrelationClustererConfig::ALL_MOVE) {
     return std::unique_ptr<gbbs::vertexSubset, void (*)(gbbs::vertexSubset*)>(
     new gbbs::vertexSubset(num_nodes, num_nodes,
@@ -333,8 +194,7 @@ BestMovesForVertexSubset(
 }
 
 bool IterateBestMoves(int num_inner_iterations, const ClustererConfig& clusterer_config,
-  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph,
-  ClusteringHelper* helper, CorrelationClustererSubclustering& subclustering) {
+  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph) {
   const auto num_nodes = current_graph->n;
   bool moved = false;
   bool local_moved = true;
@@ -351,7 +211,7 @@ bool IterateBestMoves(int num_inner_iterations, const ClustererConfig& clusterer
   for (local_iter = 0; local_iter < num_inner_iterations && local_moved; ++local_iter) {
     auto new_moved_subset =
       BestMovesForVertexSubset(current_graph, num_nodes, moved_subset.get(),
-                              helper, clusterer_config, subclustering);
+                              helper, clusterer_config);
     moved_subset.swap(new_moved_subset);
     local_moved = !moved_subset->isEmpty();
     moved |= local_moved;
@@ -429,60 +289,6 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
     return RefineClusters_subroutine(clusterer_config, initial_clustering, node_weights, graph_.Graph());
 }
 
-absl::StatusOr<GraphWithWeights> CompressSubclusters(const ClustererConfig& clusterer_config, 
-  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph,
-  std::vector<gbbs::uintE>& local_cluster_ids, 
-  ClusteringHelper* helper,
-  CorrelationClustererSubclustering& subclustering,
-  InMemoryClusterer::Clustering& new_clustering) {
-
-  // ***** subclusters from cluster ids
-  auto get_clusters = [&](gbbs::uintE i) -> gbbs::uintE { return i; };
-  std::vector<std::vector<gbbs::uintE>> curr_clustering =
-    parallel::OutputIndicesById<ClusteringHelper::ClusterId, gbbs::uintE>(
-      local_cluster_ids, get_clusters, current_graph->n);
-  std::vector<ClusteringHelper::ClusterId> subcluster_ids(current_graph->n, 0);
- 
-  auto next_ids = gbbs::sequence<std::size_t>(curr_clustering.size() + 1, [](std::size_t i){return 0;});
-
-
-      pbbs::parallel_for(0, curr_clustering.size(), [&](std::size_t i) {
-        next_ids[i] = ComputeSubcluster(subcluster_ids, 0, curr_clustering[i], current_graph,
-          subclustering, local_cluster_ids, clusterer_config);
-      });
-
-      // prefix sum on next_id_seq
-      auto total_next_id = pbbslib::scan_add_inplace(next_ids);
-      // modify subcluster_ids
-      pbbs::parallel_for(0, curr_clustering.size(), [&](std::size_t i) {
-        pbbs::parallel_for (0, curr_clustering[i].size(), [&](std::size_t j){
-          subcluster_ids[curr_clustering[i][j]] += next_ids[i];
-        });
-      });
-
-
-  /*std::size_t next_id = 0;
-  next_ids[0] = next_id;
-  for (std::size_t i = 0; i < curr_clustering.size(); i++) {
-    // When we create new local clusters, both with local_cluster_ids and helper,
-    // it should map the vertices given by prev_id to next_id, to
-    // local_cluster_ids[curr_clustering[i][0]] 
-    next_id = ComputeSubcluster(subcluster_ids, next_id, curr_clustering[i], current_graph,
-      subclustering, local_cluster_ids, clusterer_config);
-    next_ids[i + 1] = next_id;
-  }*/
-
-  // Create new local clusters (subcluster)
-  pbbs::parallel_for(1, curr_clustering.size() + 1, [&](std::size_t i) {
-    for (std::size_t j = next_ids[i-1]; j < next_ids[i]; j++) {
-      local_cluster_ids[j] = i-1;
-    }
-  });
-  new_clustering = parallel::OutputIndicesById<ClusteringHelper::ClusterId, gbbs::uintE>(
-    local_cluster_ids, get_clusters, total_next_id);
-
-  return CompressGraph(*current_graph, subcluster_ids, helper);
-} 
 
 absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
     const ClustererConfig& clusterer_config,
@@ -553,9 +359,8 @@ pbbs::timer t; t.start();
     //std::cout << "Objective: " << max_objective2 << std::endl;
 
     // Initialize subclustering data structure
-    CorrelationClustererSubclustering subclustering(clusterer_config, current_graph);
     bool moved = IterateBestMoves(num_inner_iterations, clusterer_config, current_graph,
-      helper.get(), subclustering);
+      helper.get());
 
     // If no moves can be made at all, exit
     if (!moved) {
@@ -578,18 +383,13 @@ pbbs::timer t; t.start();
     pbbs::parallel_for(0, current_graph->n, [&](std::size_t i) {
         local_cluster_ids[i] = helper->ClusterIds()[i];
     });
-    if (config.subclustering_method() != CorrelationClustererConfig::NONE_SUBCLUSTERING) {
-      ASSIGN_OR_RETURN(new_compressed_graph,
-        CompressSubclusters(clusterer_config, current_graph, local_cluster_ids, helper.get(),
-        subclustering, new_clustering));
-    } else {
       ASSIGN_OR_RETURN(
           new_compressed_graph,
           CompressGraph(*current_graph, local_cluster_ids, helper.get()));
       // Create new local clusters
       pbbs::parallel_for(0, new_compressed_graph.graph->n,
                          [&](std::size_t i) { local_cluster_ids[i] = i; });
-    }
+    
 
     compressed_graph.swap(new_compressed_graph.graph);
     if (config.refine()) {
@@ -632,9 +432,8 @@ pbbs::timer t; t.start();
       // do best moves again, using the graph and node weights from iter
 
       // TODO: get rid of subclustering here
-      CorrelationClustererSubclustering subclustering(clusterer_config, current_graph);
       IterateBestMoves(num_inner_iterations, clusterer_config, current_graph,
-        refine.recurse_helpers[i].get(), subclustering);
+        refine.recurse_helpers[i].get());
     }
     cluster_ids = refine.recurse_helpers[0]->ClusterIds();
   }

@@ -100,8 +100,7 @@ std::vector<gbbs::uintE>
 BestMovesForVertexSubset(
     gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph,
     std::size_t num_nodes, std::vector<gbbs::uintE>& moved_subset,
-    SeqClusteringHelper* helper, const ClustererConfig& clusterer_config,
-    CorrelationClustererSubclustering& subclustering) {
+    SeqClusteringHelper* helper, const ClustererConfig& clusterer_config) {
   // Find best moves per vertex in moved_subset
   std::vector<bool> moved_vertex = std::vector<bool>(current_graph->n, false);
   std::vector<bool> moved_clusters = std::vector<bool>(current_graph->n, false);
@@ -155,7 +154,7 @@ BestMovesForVertexSubset(
 
 bool IterateBestMoves(int num_inner_iterations, const ClustererConfig& clusterer_config,
   gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph,
-  SeqClusteringHelper* helper, CorrelationClustererSubclustering& subclustering) {
+  SeqClusteringHelper* helper) {
   const auto num_nodes = current_graph->n;
   bool moved = false;
   bool local_moved = true;
@@ -169,7 +168,7 @@ bool IterateBestMoves(int num_inner_iterations, const ClustererConfig& clusterer
   for (local_iter = 0; local_iter < num_inner_iterations && local_moved; ++local_iter) {
     auto new_moved_subset =
       BestMovesForVertexSubset(current_graph, num_nodes, moved_subset,
-                              helper, clusterer_config, subclustering);
+                              helper, clusterer_config);
     moved_subset.swap(new_moved_subset);
     local_moved = !moved_subset.empty();
     moved |= local_moved;
@@ -293,9 +292,8 @@ pbbs::timer t; t.start();
         (iter == 0) ? graph : compressed_graph.get();
 
     // Initialize subclustering data structure
-    CorrelationClustererSubclustering subclustering(clusterer_config, current_graph);
     bool moved = IterateBestMoves(num_inner_iterations, clusterer_config, current_graph,
-      helper.get(), subclustering);
+      helper.get());
 
     // If no moves can be made at all, exit
     if (!moved) {
@@ -357,9 +355,8 @@ pbbs::timer t; t.start();
       // do best moves again, using the graph and node weights from iter
 
       // TODO: get rid of subclustering here
-      CorrelationClustererSubclustering subclustering(clusterer_config, current_graph);
       IterateBestMoves(num_inner_iterations, clusterer_config, current_graph,
-        refine.recurse_helpers[i].get(), subclustering);
+        refine.recurse_helpers[i].get());
     }
     cluster_ids = refine.recurse_helpers[0]->ClusterIds();
   }
