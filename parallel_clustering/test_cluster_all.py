@@ -44,7 +44,7 @@ def main():
               for nw in num_workers:
                 for i in range(4):
                   out_filename = write_dir + programs_pres[prog_idx] + "_" + pres[file_idx] + "_" + str(r) + "_" + asy + "_" + ref + "_" + moves_pres[move_idx]+"_" + str(nw) + ".out"
-                  ss = ("NUM_THREADS="+str(nw)+" timeout 6h bazel-3.5.1 run //clustering:cluster-in-memory_main -- --"
+                  ss = ("NUM_THREADS="+str(nw)+" timeout 6h bazel run //clustering:cluster-in-memory_main -- --"
                   "input_graph=" + read_dir  + filename + " --clusterer_name=" + prog + " "
                   " --clusterer_config='correlation_clusterer_config"
                   " {resolution: " + str(r) + ", subclustering_method: NONE_SUBCLUSTERING, "
