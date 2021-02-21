@@ -606,7 +606,7 @@ std::tuple<ClusteringHelper::ClusterId, double> ClusteringHelper::EfficientBestM
   auto best_move_seq = gbbs::sequence<M>(together_after_entries.size());
 
   pbbs::parallel_for(0, together_after_entries.size(), [&](std::size_t i) {
-    auto cluster = std::get<0>(together_after_entries[1]);
+    auto cluster = std::get<0>(together_after_entries[i]);
     auto data = std::get<1>(together_after_entries[i]);
     max_edges = moving_nodes_weight * (cluster_weights_[cluster]);
     data -= config.resolution() * max_edges;
