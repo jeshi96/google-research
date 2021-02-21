@@ -142,6 +142,10 @@ std::unique_ptr<bool[]> MoveNodesToCluster(
   const auto& config = clusterer_config_.correlation_clusterer_config();
   const double offset = config.edge_weight_offset();
 
+  auto deg = graph.get_vertex(moving_node).getOutDegree();
+
+  if (deg <= 1000) {
+
   // Class 2 edges where the endpoints are currently in different clusters.
   //EdgeSum class_2_currently_separate;
   // Class 1 edges where the endpoints are currently in the same cluster.
@@ -209,6 +213,79 @@ std::unique_ptr<bool[]> MoveNodesToCluster(
       std::make_tuple(move_id, best_move.second);
 
   return best_move_tuple;
+  }
+
+   auto curr_together_seq = gbbs::sequence<double>(deg, [](std::size_t i){return double{0};});
+
+  auto together_after_table = pbbslib::sparse_additive_map(deg, std::make_tuple(UINT_E_MAX, double{0}));
+
+  // Class 1 edges, grouped by the cluster that the non-moving node is in.
+  absl::flat_hash_map<ClusterId, EdgeSum> class_1_together_after;
+
+  double moving_nodes_weight = 0;
+  const ClusterId node_cluster = cluster_ids_[moving_node];
+  //cluster_moving_weights[node_cluster] += node_weights_[moving_node];
+  moving_nodes_weight += node_weights_[moving_node];
+
+  auto map_moving_node_neighbors = [&](const gbbs::uintE u_id, const gbbs::uintE neighbor,
+    W w, const gbbs::uintE j){
+      float weight = FloatFromWeightPCCI(w);
+      weight -= offset;
+      const ClusterId neighbor_cluster = cluster_ids_[neighbor];
+      if (moving_node != neighbor) {
+        // Class 1 edge.
+        if (node_cluster == neighbor_cluster) {
+          curr_together_seq[j] = weight;
+          //class_1_currently_together.Add(weight);
+        }
+        together_after_table.insert({gbbs::uintE{neighbor_cluster}, double{weight}});
+        //class_1_together_after[neighbor_cluster].Add(weight);
+      }
+    };
+    graph.get_vertex(moving_node)
+      .mapOutNghWithIndex(moving_node, map_moving_node_neighbors);
+
+ double change_in_objective = 0;
+
+  double max_edges = 0;
+  //change_in_objective += class_2_currently_separate.NetWeight(max_edges, config);
+
+  max_edges = node_weights_[moving_node] *
+              (cluster_weights_[node_cluster] - node_weights_[moving_node]);
+  double curr_together = pbbslib::reduce_add(curr_together_seq) - config.resolution() * max_edges;
+  change_in_objective -= curr_together;
+
+  auto together_after_entries = together_after_table.entries();
+  using M = std::tuple<ClusterId, double>;
+  auto best_move_seq = gbbs::sequence<M>(together_after_entries.size());
+
+  pbbs::parallel_for(0, together_after_entries.size(), [&](std::size_t i) {
+    auto cluster = std::get<0>(together_after_entries[i]);
+    auto data = std::get<1>(together_after_entries[i]);
+    max_edges = moving_nodes_weight * (cluster_weights_[cluster]);
+    data -= config.resolution() * max_edges;
+    double overall_change_in_objective = change_in_objective + data;
+    best_move_seq[i] = std::make_tuple(ClusterId{cluster}, overall_change_in_objective);
+  });
+
+  // Retrieve max of best_move_seq
+  auto f_max = [](const M& a, const M& b){
+    if (std::get<1>(a) == std::get<1>(b)) {
+      if (std::get<0>(a) < std::get<0>(b)) return a;
+      return b;
+    }
+    if (std::get<1>(a) > std::get<1>(b)) return a;
+    return b;
+  };
+  auto max_monoid = pbbs::make_monoid(f_max, std::make_tuple(ClusterId{0}, double{0}));
+  auto max_move = pbbs::reduce(best_move_seq.slice(), max_monoid);
+
+  if (change_in_objective >= std::get<1>(max_move)) {
+    std::tuple<ClusterId, double> best_move_tuple =
+      std::make_tuple(graph.n, change_in_objective);
+    return best_move_tuple;
+  }
+  return max_move;
 }
   
 template<class Graph>
