@@ -319,7 +319,7 @@ template<class Graph>
     auto add_m = pbbslib::addm<double>();
 
     auto intra_cluster_sum_map_f = [&](gbbs::uintE u, gbbs::uintE v,
-                                       W weight) -> double {
+                                       W weight){
       // This assumes that the graph is undirected, and self-loops are counted
       // as half of the weight.
       if (cluster_id_i == cluster_ids_[v])
@@ -356,8 +356,8 @@ template<class Graph>
     auto add_m = pbbslib::addm<double>();
 
     auto intra_cluster_sum_map_f = [&](gbbs::uintE u, gbbs::uintE v,
-                                      W w) -> double {
-                                      float weight = FloatFromWeightPCCI(w);
+                                      W w){
+      float weight = FloatFromWeightPCCI(w);
       // This assumes that the graph is undirected, and self-loops are counted
       // as half of the weight.
       if (cluster_id_i != cluster_ids_[v])
@@ -366,6 +366,7 @@ template<class Graph>
         return (-1 * config.resolution() * node_weights_[u] * node_weights_[v]) / 2;
       return 0;
     };
+
     shifted_edge_weight[i] = graph.get_vertex(i).reduceOutNgh<double>(
         i, intra_cluster_sum_map_f, add_m);
   });
