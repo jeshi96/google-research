@@ -105,13 +105,14 @@ namespace {
 // set. Essentially, all neighbors are valid in this edge map, and this
 // map does not do anything except allow for neighbors to be aggregated
 // into the next frontier.
+template<typename W>
 struct CorrelationClustererEdgeMap {
   inline bool cond(gbbs::uintE d) { return true; }
-  inline bool update(const gbbs::uintE& s, const gbbs::uintE& d, float wgh) {
+  inline bool update(const gbbs::uintE& s, const gbbs::uintE& d, W wgh) {
     return true;
   }
   inline bool updateAtomic(const gbbs::uintE& s, const gbbs::uintE& d,
-                           float wgh) {
+                           W wgh) {
     return true;
   }
 };
@@ -171,6 +172,8 @@ BestMovesForVertexSubset(
     });
   }
 
+  using W = typename G::weight_type;
+
   bool default_move = clusterer_config.correlation_clusterer_config().move_method() == CorrelationClustererConfig::NBHR_CLUSTER_MOVE;
   // Mark vertices adjacent to clusters that have moved; these are
   // the vertices whose best moves must be recomputed.
@@ -191,7 +194,7 @@ BestMovesForVertexSubset(
             subset->del();
             delete subset;
           });
-  auto edge_map = CorrelationClustererEdgeMap{};
+  auto edge_map = CorrelationClustererEdgeMap<W>{};
   auto new_moved_subset =
       gbbs::edgeMap(*current_graph, *(local_moved_subset.get()), edge_map);
   return std::unique_ptr<gbbs::vertexSubset, void (*)(gbbs::vertexSubset*)>(
