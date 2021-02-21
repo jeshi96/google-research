@@ -31,6 +31,7 @@ namespace in_memory {
 // Interface of an in-memory clustering algorithm. The classes implementing this
 // interface maintain a mutable graph, which can be clustered using a given set
 // of parameters.
+template<class ClusterGraph>
 class InMemoryClusterer {
  public:
   // This is a basic interface for building graphs. Note that the interface only
