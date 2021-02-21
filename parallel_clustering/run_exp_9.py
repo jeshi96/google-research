@@ -43,8 +43,12 @@ def run_9():
             for move_idx, move in enumerate(moves):
               for nw in num_workers:
                 if True: #for i in range(4):
+                  if prog_idx <= 1:
+                    timer = ""
+                  else:
+                    timer = "timeout 6h"
                   out_filename = write_dir + programs_pres[prog_idx] + "_" + pres[file_idx] + "_" + str(r) + "_" + asy + "_" + ref + "_" + moves_pres[move_idx]+"_" + str(nw) + ".out"
-                  ss = ("NUM_THREADS="+str(nw)+" timeout 6h bazel run //clustering:cluster-in-memory_main -- --"
+                  ss = ("NUM_THREADS="+str(nw)+" "+timer+" bazel run //clustering:cluster-in-memory_main -- --"
                   "input_graph=" + read_dir  + filename + " --clusterer_name=" + prog + " "
                   " --clusterer_config='correlation_clusterer_config"
                   " {resolution: " + str(r) + ", subclustering_method: NONE_SUBCLUSTERING, "
