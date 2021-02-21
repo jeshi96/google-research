@@ -120,7 +120,7 @@ struct CorrelationClustererRefine {
   using H = std::unique_ptr<ClusteringHelper>;
   using GX = std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>;
   gbbs::sequence<H> recurse_helpers = gbbs::sequence<H>(0, [](std::size_t i){return H(nullptr);});
-  gbbs::sequence<G> recurse_graphs = gbbs::sequence<GX>(0, [](std::size_t i){return G(nullptr);});
+  gbbs::sequence<GX> recurse_graphs = gbbs::sequence<GX>(0, [](std::size_t i){return G(nullptr);});
   bool use_refine = false;
 };
 
