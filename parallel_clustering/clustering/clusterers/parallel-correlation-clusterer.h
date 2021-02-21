@@ -169,7 +169,7 @@ using Clustering = std::vector<std::vector<gbbs::uintE>>;
 // ../config.proto for more. This uses the CorrelationClustererConfig proto.
 // Also, note that the input graph is required to be undirected.
 template<class ClusterGraph>
-class ParallelCorrelationClusterer : public InMemoryClusterer<ClusterGraph> {
+class ParallelCorrelationClusterer : public InMemoryClusterer<ClusterGraph>{
   protected:
   GbbsGraph<ClusterGraph> graph_;
  public:
@@ -293,7 +293,7 @@ pbbs::timer t; t.start();
     helper = absl::make_unique<ClusteringHelper>(
         compressed_graph->n, clusterer_config,
         new_compressed_graph.node_weights, new_clustering);
-
+  }
   // Refine clusters up the stack
   if (config.refine() && iter > 0) {
     auto get_clusters = [&](NodeId i) -> NodeId { return i; };
@@ -319,6 +319,7 @@ pbbs::timer t; t.start();
     }
     cluster_ids = refine.recurse_helpers[0]->ClusterIds();
   }
+  
 
 t.stop(); t.reportTotal("Actual Cluster Time: ");
   std::cout << "Num outer: " << iter << std::endl;

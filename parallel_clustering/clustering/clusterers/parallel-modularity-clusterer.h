@@ -74,7 +74,7 @@ double resolution){
 // ../config.proto for more. This uses the CorrelationClustererConfig proto.
 // Also, note that the input graph is required to be undirected.
 template<class ClusterGraph>
-class ParallelModularityClusterer : public ParallelCorrelationClusterer<ClusterGraph> {
+class ParallelModularityClusterer : public ParallelCorrelationClusterer<ClusterGraph>{
  public:
   using ClusterId = gbbs::uintE;
 
