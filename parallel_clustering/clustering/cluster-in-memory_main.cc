@@ -202,8 +202,8 @@ absl::Status Main() {
   using FloatGraph = gbbs::symmetric_graph<gbbs::symmetric_vertex, float>;
   using UnweightedGraph = gbbs::symmetric_graph<gbbs::symmetric_vertex, pbbslib::empty>;
 
-  std::unique_ptr<InMemoryClusterer> clusterer;
-  if (clusterer_name == "ParallelCorrelationClusterer" && float_weighted) {
+  std::unique_ptr<InMemoryClusterer<UnweightedGraph>> clusterer;
+  /*if (clusterer_name == "ParallelCorrelationClusterer" && float_weighted) {
     clusterer.reset(new ParallelCorrelationClusterer<FloatGraph>);
   } else if (clusterer_name == "ParallelModularityClusterer" && float_weighted) {
     clusterer.reset(new ParallelModularityClusterer<FloatGraph>);
@@ -211,7 +211,8 @@ absl::Status Main() {
     clusterer.reset(new CorrelationClusterer<FloatGraph>);
   } else if (clusterer_name == "ModularityClusterer" && float_weighted) {
     clusterer.reset(new ModularityClusterer<FloatGraph>);
-  } else if (clusterer_name == "ParallelCorrelationClusterer" && !float_weighted) {
+  } else*/
+  if (clusterer_name == "ParallelCorrelationClusterer" && !float_weighted) {
     clusterer.reset(new ParallelCorrelationClusterer<UnweightedGraph>);
   } else if (clusterer_name == "ParallelModularityClusterer" && !float_weighted) {
     clusterer.reset(new ParallelModularityClusterer<UnweightedGraph>);
@@ -219,11 +220,6 @@ absl::Status Main() {
     clusterer.reset(new CorrelationClusterer<UnweightedGraph>);
   } else if (clusterer_name == "ModularityClusterer" && !float_weighted) {
     clusterer.reset(new ModularityClusterer<UnweightedGraph>);
-  }
-  else {
-    return absl::UnimplementedError(
-        "ParallelAffinityClusterer, ParallelCorrelationClusterer, and "
-        "ParallelModularityClusterer are the only supported clusterers.");
   }
 auto begin_read = std::chrono::steady_clock::now();
   std::string input_file = absl::GetFlag(FLAGS_input_graph);
@@ -238,34 +234,19 @@ auto begin_read = std::chrono::steady_clock::now();
     // Transform to pointer graph
     n = G.n;
     clusterer->MutableGraph()->graph_ = absl::make_unique<gbbs::symmetric_graph<gbbs::symmetric_vertex, float>>(G);
-    //g = CopyGraph(G);
   } else {
     auto G = gbbs::gbbs_io::read_unweighted_symmetric_graph(input_file.c_str(), false);
     gbbs::alloc_init(G);
     // Transform to pointer graph
     n = G.n;
     clusterer->MutableGraph()->graph_ = absl::make_unique<gbbs::symmetric_graph<gbbs::symmetric_vertex, pbbslib::empty>>(G);
-    //g = CopyGraph(G);
   }
-  //clusterer->MutableGraph()->graph_ = absl::make_unique<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>(g);
-  /*if (float_weighted) {
-    const auto edge_list{
-        gbbs::gbbs_io::read_weighted_edge_list<float>(input_file.c_str())};
-    ASSIGN_OR_RETURN(n, WriteEdgeListAsGraph(clusterer->MutableGraph(),
-                                             edge_list, is_symmetric_graph));
-  } else {
-    const auto edge_list{
-        gbbs::gbbs_io::read_unweighted_edge_list(input_file.c_str())};
-    ASSIGN_OR_RETURN(n, WriteEdgeListAsGraph(clusterer->MutableGraph(),
-                                             edge_list, is_symmetric_graph));
-  }*/
+
 auto end_read = std::chrono::steady_clock::now();
 PrintTime(begin_read, end_read, "Read");
 
 std::cout << "Num workers: " << pbbs::num_workers() << std::endl;
 std::cout << "Graph: " << input_file << std::endl;
-  // Must initialize the list allocator for GBBS, to support parallelism.
-  // The list allocator seeds using the number of vertices in the input graph.
   
 auto begin_cluster = std::chrono::steady_clock::now();
   InMemoryClusterer::Clustering clustering;
