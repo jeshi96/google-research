@@ -47,6 +47,11 @@
 namespace research_graph {
 namespace in_memory {
 
+
+float FloatFromWeightPCCI(float weight) { return weight; }
+float FloatFromWeightPCCI(pbbslib::empty weight) { return 1; }
+using ClusterId = gbbs::uintE;
+
 // This class encapsulates the data needed to compute and maintain the
 // correlation clustering objective.
 class ClusteringHelper {
@@ -304,6 +309,7 @@ template<class Graph>
   template<class Graph>
   double ComputeObjective(
       Graph& graph){
+  using W = typename Graph::weight_type;
   const auto& config = clusterer_config_.correlation_clusterer_config();
   std::vector<double> shifted_edge_weight(graph.n);
 
@@ -313,11 +319,11 @@ template<class Graph>
     auto add_m = pbbslib::addm<double>();
 
     auto intra_cluster_sum_map_f = [&](gbbs::uintE u, gbbs::uintE v,
-                                       float weight) -> double {
+                                       W weight) -> double {
       // This assumes that the graph is undirected, and self-loops are counted
       // as half of the weight.
       if (cluster_id_i == cluster_ids_[v])
-        return (weight - config.edge_weight_offset()) / 2;
+        return (FloatFromWeightPCCI(weight) - config.edge_weight_offset()) / 2;
       return 0;
     };
     shifted_edge_weight[i] = graph.get_vertex(i).reduceOutNgh<double>(
@@ -342,6 +348,7 @@ template<class Graph>
   // They minimize sum of edges in b/w clusters (edge weight - res * weight i * weight j) + non-edges in cluster (res * w_i w_j)
   const auto& config = clusterer_config_.correlation_clusterer_config();
   std::vector<double> shifted_edge_weight(graph.n);
+  using W = typename Graph::weight_type;
 
   // Compute cluster statistics contributions of each vertex
   pbbs::parallel_for(0, graph.n, [&](std::size_t i) {
@@ -349,7 +356,8 @@ template<class Graph>
     auto add_m = pbbslib::addm<double>();
 
     auto intra_cluster_sum_map_f = [&](gbbs::uintE u, gbbs::uintE v,
-                                       float weight) -> double {
+                                      W w) -> double {
+                                      float weight = FloatFromWeightPCCI(w);
       // This assumes that the graph is undirected, and self-loops are counted
       // as half of the weight.
       if (cluster_id_i != cluster_ids_[v])
