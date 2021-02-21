@@ -29,8 +29,8 @@ namespace research_graph {
 
 namespace {
 
-float FloatFromWeightPGU(float weight) { return weight; }
-float FloatFromWeightPGU(pbbslib::empty weight) { return 1; }
+inline float FloatFromWeightPGU(float weight) { return weight; }
+inline float FloatFromWeightPGU(pbbslib::empty weight) { return 1; }
 
 }
 
