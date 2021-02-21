@@ -283,7 +283,7 @@ pbbs::timer t; t.start();
     refine.recurse_graphs = gbbs::sequence<GX>(num_iterations);
     for (std::size_t i = 0; i < num_iterations; i++) {
       refine.recurse_helpers[i] = H(nullptr);
-      refine.recurse_graphs[i] = G(nullptr);
+      refine.recurse_graphs[i] = GX(nullptr);
     }
   }
 
