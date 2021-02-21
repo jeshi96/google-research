@@ -169,5 +169,6 @@ cc_library(
         "@gbbs//pbbslib:utilities",
         "@gbbs//benchmarks/Connectivity/WorkEfficientSDB14:Connectivity",
         "@gbbs//gbbs/pbbslib:sparse_table",
+        "@gbbs//gbbs/pbbslib:sparse_additive_map",
     ],
 )
