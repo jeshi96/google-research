@@ -19,6 +19,8 @@
 #include <iterator>
 #include <utility>
 #include <vector>
+#include <iomanip>
+#include <iostream>
 
 #include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
@@ -227,9 +229,9 @@ pbbs::timer t; t.start();
   CorrelationClustererRefine refine{};
   if (config.refine()) {
     using H = std::unique_ptr<ClusteringHelper>;
-    using G = std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>;
+    using GX = std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>;
     refine.recurse_helpers = gbbs::sequence<H>(num_iterations, [](std::size_t i){return H(nullptr);});
-    refine.recurse_graphs = gbbs::sequence<G>(num_iterations, [](std::size_t i){return G(nullptr);});
+    refine.recurse_graphs = gbbs::sequence<GX>(num_iterations, [](std::size_t i){return G(nullptr);});
   }
 
   std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>
