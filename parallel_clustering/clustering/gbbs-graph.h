@@ -40,7 +40,7 @@ template<class ClusterGraph>
 class GbbsGraph : public InMemoryClusterer<ClusterGraph>::Graph {
  public:
   ClusterGraph* Graph() const{
-  return graph_.get();
+  return InMemoryClusterer<ClusterGraph>::Graph::graph_.get();
 }
 
   //std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>
