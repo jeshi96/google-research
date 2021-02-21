@@ -227,20 +227,20 @@ auto begin_read = std::chrono::steady_clock::now();
   
   std::size_t n = 0;
 
-  if (float_weighted) {
+  /*if (float_weighted) {
     auto G = gbbs::gbbs_io::read_weighted_symmetric_graph<float>(
             input_file.c_str(), false);
     gbbs::alloc_init(G);
     // Transform to pointer graph
     n = G.n;
     clusterer->MutableGraph()->graph_ = absl::make_unique<gbbs::symmetric_graph<gbbs::symmetric_vertex, float>>(G);
-  } else {
+  } else {*/
     auto G = gbbs::gbbs_io::read_unweighted_symmetric_graph(input_file.c_str(), false);
     gbbs::alloc_init(G);
     // Transform to pointer graph
     n = G.n;
     clusterer->MutableGraph()->graph_ = absl::make_unique<gbbs::symmetric_graph<gbbs::symmetric_vertex, pbbslib::empty>>(G);
-  }
+  //}
 
 auto end_read = std::chrono::steady_clock::now();
 PrintTime(begin_read, end_read, "Read");
