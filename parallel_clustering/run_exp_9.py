@@ -25,7 +25,7 @@ def appendToFile(out, filename):
 def run_9():
   programs = ["ParallelCorrelationClusterer", "ParallelModularityClusterer", "CorrelationClusterer", "ModularityClusterer"]
   programs_pres = ["pc","pm","c","m"]
-  files = ["hyperlink2012_sym.bytepd","hyperlink2014_sym.bytepd"]#,"dblp_h", "lj_h","orkut_h","friendster_h"]
+  files = ["hyperlink2012_sym.bytepda","hyperlink2014_sym.bytepda"]#,"dblp_h", "lj_h","orkut_h","friendster_h"]
   pres = ["h12","h14"]#,"dblp","lj","orkut","friendster"]
   async_sync = ["true"]
   refines = ["true"]
