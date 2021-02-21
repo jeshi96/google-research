@@ -151,6 +151,7 @@ class SeqClusteringHelper {
   std::tuple<SeqClusteringHelper::ClusterId, double> EfficientBestMove(
     G& graph,
     gbbs::uintE moving_node) {
+      using W = typename G::weight_type;
   const auto& config = clusterer_config_.correlation_clusterer_config();
   const double offset = config.edge_weight_offset();
 
@@ -167,7 +168,8 @@ class SeqClusteringHelper {
   moving_nodes_weight += node_weights_[moving_node];
 
   auto map_moving_node_neighbors = [&](gbbs::uintE u, gbbs::uintE neighbor,
-                                       double weight) {
+                                       W w) {
+    float weight = FloatFromWeightCCI(w);
     weight -= offset;
     const ClusterId neighbor_cluster = cluster_ids_[neighbor];
     if (moving_node != neighbor) {
