@@ -37,7 +37,7 @@ namespace in_memory {
 // will appear in the adjacency list of vertex u unless explicitly
 // specified in vertex u's adjacency list.
 template<class ClusterGraph>
-class GbbsGraph : public InMemoryClusterer::Graph {
+class GbbsGraph : public InMemoryClusterer<ClusterGraph>::Graph {
  public:
   // Stores the node and edge information in nodes_ and edges_
   absl::Status Import(AdjacencyList adjacency_list) override{
