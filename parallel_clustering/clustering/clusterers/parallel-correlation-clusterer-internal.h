@@ -37,9 +37,9 @@ class ClusteringHelper {
  public:
   using ClusterId = gbbs::uintE;
 
-  ClusteringHelper(InMemoryClusterer::NodeId num_nodes,
+  ClusteringHelper(gbbs::uintE num_nodes,
                    const ClustererConfig& clusterer_config,
-                   const InMemoryClusterer::Clustering& clustering)
+                   const std::vector<std::vector<gbbs::uintE>>& clustering)
       : num_nodes_(num_nodes),
         cluster_ids_(num_nodes),
         cluster_sizes_(num_nodes, 0),
@@ -49,10 +49,10 @@ class ClusteringHelper {
     SetClustering(clustering);
   }
 
-  ClusteringHelper(InMemoryClusterer::NodeId num_nodes,
+  ClusteringHelper(gbbs::uintE num_nodes,
                    const ClustererConfig& clusterer_config,
                    std::vector<double> node_weights,
-                   const InMemoryClusterer::Clustering& clustering)
+                   const std::vector<std::vector<gbbs::uintE>>& clustering)
       : num_nodes_(num_nodes),
         cluster_ids_(num_nodes),
         cluster_sizes_(num_nodes, 0),
@@ -115,7 +115,7 @@ std::unique_ptr<bool[]> MoveNodesToCluster(
   template<class Graph>
   std::tuple<ClusteringHelper::ClusterId, double> EfficientBestMove(
     Graph& graph,
-    InMemoryClusterer::NodeId moving_node) {
+    gbbs::uintE moving_node) {
   const auto& config = clusterer_config_.correlation_clusterer_config();
   const double offset = config.edge_weight_offset();
 
@@ -190,7 +190,7 @@ std::unique_ptr<bool[]> MoveNodesToCluster(
 template<class Graph>
   bool AsyncMove(
     Graph& graph,
-    InMemoryClusterer::NodeId moving_node) {
+    gbbs::uintE moving_node) {
   auto best_move = EfficientBestMove(graph, moving_node);
 
   auto move_cluster_id = std::get<0>(best_move);
@@ -365,13 +365,13 @@ template<class Graph>
   const std::vector<double>& ClusterWeights() const { return cluster_weights_; }
 
   // Returns the weight of the given node, or 1.0 if it has not been set.
-  double NodeWeight(InMemoryClusterer::NodeId id) const;
+  double NodeWeight(gbbs::uintE id) const;
 
   // Initialize cluster_ids_ and cluster_sizes_ given an initial clustering.
   // If clustering is empty, initialize singleton clusters.
-  void SetClustering(const InMemoryClusterer::Clustering& clustering);
+  void SetClustering(const std::vector<std::vector<gbbs::uintE>>& clustering);
 
-  void ResetClustering(const InMemoryClusterer::Clustering& clustering);
+  void ResetClustering(const std::vector<std::vector<gbbs::uintE>>& clustering);
 
  private:
   std::size_t num_nodes_;

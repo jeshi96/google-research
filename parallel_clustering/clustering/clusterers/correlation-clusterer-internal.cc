@@ -43,11 +43,11 @@
 namespace research_graph {
 namespace in_memory {
 
-using NodeId = InMemoryClusterer::NodeId;
+using NodeId = gbbs::uintE;
 using ClusterId = SeqClusteringHelper::ClusterId;
 
 void SeqClusteringHelper::ResetClustering(
-  const InMemoryClusterer::Clustering& clustering) {
+  const std::vector<std::vector<gbbs::uintE>>& clustering) {
   for (std::size_t i = 0; i < num_nodes_; i++) {
       cluster_weights_[i] = 0;
       cluster_sizes_[i] = 0;
@@ -57,7 +57,7 @@ void SeqClusteringHelper::ResetClustering(
 }
 
 void SeqClusteringHelper::SetClustering(
-    const InMemoryClusterer::Clustering& clustering) {
+    const std::vector<std::vector<gbbs::uintE>>& clustering) {
   if (clustering.empty()) {
     for (std::size_t i = 0; i < num_nodes_; i++) {
       cluster_sizes_[i] = 1;

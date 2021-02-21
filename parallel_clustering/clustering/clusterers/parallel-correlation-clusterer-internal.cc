@@ -43,11 +43,11 @@
 namespace research_graph {
 namespace in_memory {
 
-using NodeId = InMemoryClusterer::NodeId;
-using ClusterId = ClusteringHelper::ClusterId;
+using NodeId = gbbs::uintE;
+using ClusterId = gbbs::uintE;
 
 void ClusteringHelper::ResetClustering(
-  const InMemoryClusterer::Clustering& clustering) {
+  const std::vector<std::vector<gbbs::uintE>>& clustering) {
   pbbs::parallel_for(0, num_nodes_, [&](std::size_t i) {
       cluster_weights_[i] = 0;
       cluster_sizes_[i] = 0;
@@ -57,7 +57,7 @@ void ClusteringHelper::ResetClustering(
 }
 
 void ClusteringHelper::SetClustering(
-    const InMemoryClusterer::Clustering& clustering) {
+    const std::vector<std::vector<gbbs::uintE>>& clustering) {
   if (clustering.empty()) {
     pbbs::parallel_for(0, num_nodes_, [&](std::size_t i) {
       cluster_sizes_[i] = 1;
