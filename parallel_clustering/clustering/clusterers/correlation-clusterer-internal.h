@@ -35,8 +35,8 @@ namespace research_graph {
 namespace in_memory {
 
 
-float FloatFromWeightCCI(float weight) { return weight; }
-float FloatFromWeightCCI(pbbslib::empty weight) { return 1; }
+float FloatFromWeightCCI(float weight);
+float FloatFromWeightCCI(pbbslib::empty weight);
 
 // Retrieves a list of inter-cluster edges, given a set of cluster_ids
 // that form the vertices of a new graph. Maps all edges in original_graph

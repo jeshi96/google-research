@@ -43,6 +43,9 @@
 namespace research_graph {
 namespace in_memory {
 
+float FloatFromWeightCCI(float weight) { return weight; }
+float FloatFromWeightCCI(pbbslib::empty weight) { return 1; }
+
 using NodeId = gbbs::uintE;
 using ClusterId = SeqClusteringHelper::ClusterId;
 
