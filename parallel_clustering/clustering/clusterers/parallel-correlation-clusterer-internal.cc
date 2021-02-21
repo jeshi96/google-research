@@ -36,6 +36,7 @@
 #include "parallel/parallel-graph-utils.h"
 #include "parallel/parallel-sequence-ops.h"
 #include "external/gbbs/gbbs/pbbslib/sparse_table.h"
+#include "external/gbbs/gbbs/pbbslib/sparse_additive_map.h"
 
 #include "external/gbbs/benchmarks/Connectivity/WorkEfficientSDB14/Connectivity.h"
 #include "external/gbbs/benchmarks/Connectivity/SimpleUnionAsync/Connectivity.h"
