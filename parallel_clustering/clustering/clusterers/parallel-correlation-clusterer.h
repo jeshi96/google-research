@@ -170,9 +170,9 @@ using Clustering = std::vector<std::vector<gbbs::uintE>>;
 // Also, note that the input graph is required to be undirected.
 template<class ClusterGraph>
 class ParallelCorrelationClusterer : public InMemoryClusterer<ClusterGraph>{
-  protected:
+  public:
   GbbsGraph<ClusterGraph> graph_;
- public:
+ 
   using ClusterId = gbbs::uintE;
 
 

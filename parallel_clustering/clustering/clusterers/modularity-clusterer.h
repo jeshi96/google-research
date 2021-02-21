@@ -45,19 +45,6 @@ class ModularityClusterer : public CorrelationClusterer<ClusterGraph> {
  public:
   using ClusterId = gbbs::uintE;
 
-  absl::StatusOr<Clustering> Cluster(
-      const ClustererConfig& config) const override{
-  Clustering clustering(graph_.Graph()->n);
-
-  // Create all-singletons initial clustering
-  for (std::size_t i = 0; i < graph_.Graph()->n; i++) {
-    clustering[i] = {static_cast<gbbs::uintE>(i)};
-  }
-
-  RETURN_IF_ERROR(RefineClusters(clusterer_config, &clustering));
-
-  return clustering;
-}
 
   // initial_clustering must include every node in the range
   // [0, MutableGraph().NumNodes()) exactly once.
@@ -91,8 +78,21 @@ t.stop(); t.reportTotal("Actual Modularity Config Time: ");
   return absl::OkStatus();
 }
 
+  absl::StatusOr<Clustering> Cluster(
+      const ClustererConfig& config) const override{
+  Clustering clustering(graph_.Graph()->n);
+
+  // Create all-singletons initial clustering
+  for (std::size_t i = 0; i < graph_.Graph()->n; i++) {
+    clustering[i] = {static_cast<gbbs::uintE>(i)};
+  }
+
+  RETURN_IF_ERROR(RefineClusters(clusterer_config, &clustering));
+
+  return clustering;
+}
+
   
-  double ComputeModularity2(const ClustererConfig& config, Clustering* initial_clustering);
 };
 
 }  // namespace in_memory

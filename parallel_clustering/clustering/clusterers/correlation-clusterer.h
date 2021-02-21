@@ -190,9 +190,9 @@ bool IterateBestMoves(int num_inner_iterations, const ClustererConfig& clusterer
 // Also, note that the input graph is required to be undirected.
 template<class ClusterGraph>
 class CorrelationClusterer : public InMemoryClusterer<ClusterGraph> {
-protected:
-  GbbsGraph<ClusterGraph> graph_;
  public:
+  GbbsGraph<ClusterGraph> graph_;
+
   using ClusterId = gbbs::uintE;
 
 
