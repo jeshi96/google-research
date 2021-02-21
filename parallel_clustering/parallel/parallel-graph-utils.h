@@ -85,10 +85,10 @@ RetrieveInterClusterEdges(
       research_graph::parallel::FilterOut<
           std::tuple<gbbs::uintE, gbbs::uintE, float>>(
           absl::Span<const std::tuple<gbbs::uintE, gbbs::uintE, float>>(
-              all_edges.data(), all_offsets_scan.second,
+              all_edges.data(), all_offsets_scan.second),
           [](std::tuple<gbbs::uintE, gbbs::uintE, float> x) {
             return std::get<0>(x) != UINT_E_MAX && std::get<1>(x) != UINT_E_MAX;
-          }));
+          });
   return filtered_edges;
 }
 
