@@ -25,7 +25,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
-#include "clustering/clusterers/parallel-affinity.h"
 #include "clustering/clusterers/parallel-correlation-clusterer.h"
 #include "clustering/clusterers/parallel-modularity-clusterer.h"
 #include "clustering/clusterers/correlation-clusterer.h"
@@ -242,9 +241,7 @@ absl::Status Main() {
   }
 
   std::unique_ptr<InMemoryClusterer> clusterer;
-  if (clusterer_name == "ParallelAffinityClusterer") {
-    clusterer.reset(new ParallelAffinityClusterer);
-  } else if (clusterer_name == "ParallelCorrelationClusterer") {
+  if (clusterer_name == "ParallelCorrelationClusterer") {
     clusterer.reset(new ParallelCorrelationClusterer);
   } else if (clusterer_name == "ParallelModularityClusterer") {
     clusterer.reset(new ParallelModularityClusterer);
