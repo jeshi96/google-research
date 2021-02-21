@@ -192,6 +192,7 @@ template<class ClusterGraph>
 class CorrelationClusterer : public InMemoryClusterer<ClusterGraph> {
  public:
   GbbsGraph<ClusterGraph> graph_;
+  Graph* MutableGraph() override { return &graph_; }
 
   using ClusterId = gbbs::uintE;
 
