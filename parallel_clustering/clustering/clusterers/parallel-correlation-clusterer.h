@@ -32,6 +32,8 @@
 namespace research_graph {
 namespace in_memory {
 
+  using NodeId  = gbbs::uintE;
+
 namespace {
 // This struct is necessary to perform an edge map with GBBS over a vertex
 // set. Essentially, all neighbors are valid in this edge map, and this
@@ -166,6 +168,8 @@ using Clustering = std::vector<std::vector<gbbs::uintE>>;
 // Also, note that the input graph is required to be undirected.
 template<class ClusterGraph>
 class ParallelCorrelationClusterer : public InMemoryClusterer<ClusterGraph> {
+  protected:
+  GbbsGraph<ClusterGraph> graph_;
  public:
   using ClusterId = gbbs::uintE;
 
@@ -417,8 +421,7 @@ template<class G>
 
 
 
- protected:
-  GbbsGraph<ClusterGraph> graph_;
+
 };
 
 }  // namespace in_memory
