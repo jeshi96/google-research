@@ -270,9 +270,9 @@ pbbs::timer t; t.start();
   CorrelationClustererRefine refine{};
   if (config.refine()) {
     using H = std::unique_ptr<ClusteringHelper>;
-    using G = std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>;
+    using GX = std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>;
     refine.recurse_helpers = gbbs::sequence<H>(num_iterations, [](std::size_t i){return H(nullptr);});
-    refine.recurse_graphs = gbbs::sequence<G>(num_iterations, [](std::size_t i){return G(nullptr);});
+    refine.recurse_graphs = gbbs::sequence<GX>(num_iterations, [](std::size_t i){return G(nullptr);});
   }
 
   std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>
@@ -423,7 +423,7 @@ template<class G>
 absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
     const ClustererConfig& clusterer_config,
     InMemoryClusterer::Clustering* initial_clustering,
-    gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* graph) const {
+    G* graph) const {
   std::vector<double> empty;
   return RefineClusters_subroutine(clusterer_config, initial_clustering, empty, graph);
 }
