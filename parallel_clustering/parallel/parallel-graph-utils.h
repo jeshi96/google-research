@@ -88,7 +88,7 @@ RetrieveInterClusterEdges(
               all_edges.data(), all_offsets_scan.second,
           [](std::tuple<gbbs::uintE, gbbs::uintE, float> x) {
             return std::get<0>(x) != UINT_E_MAX && std::get<1>(x) != UINT_E_MAX;
-          });
+          }));
   return filtered_edges;
 }
 
