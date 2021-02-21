@@ -44,24 +44,13 @@ class GbbsGraph : public InMemoryClusterer::Graph {
   // Constructs graph_ using nodes_ and edges_
   absl::Status FinishImport() override;
 
-  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* Graph() const;
+  gbbs::symmetric_graph<gbbs::csv_bytepd_amortized, pbbslib::empty>* Graph() const;
 
   //std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>
   //    graph_;
 
- private:
-  // Ensures that the graph has the given number of nodes, by adding new nodes
-  // if necessary.
-  void EnsureSize(NodeId id);
-  absl::Mutex mutex_;
-  std::vector<gbbs::symmetric_vertex<float>> nodes_;
-  std::vector<std::unique_ptr<std::tuple<gbbs::uintE, float>[]>> edges_;
 };
 
-// Calls out_graph->Import() for each node in in_graph.
-absl::Status CopyGraph(
-    gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& in_graph,
-    InMemoryClusterer::Graph* out_graph);
 
 }  // namespace in_memory
 }  // namespace research_graph

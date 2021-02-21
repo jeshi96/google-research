@@ -25,7 +25,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
-#include "clustering/clusterers/parallel-affinity.h"
 #include "clustering/clusterers/parallel-correlation-clusterer.h"
 #include "clustering/clusterers/parallel-modularity-clusterer.h"
 #include "clustering/clusterers/correlation-clusterer.h"
@@ -228,27 +227,6 @@ struct FakeGraph {
   std::size_t n;
 };
 
-template <class Graph>
-gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float> CopyGraph(Graph& graph){
-  using vertex_data = gbbs::symmetric_vertex<float>;
-  using edge_type = std::tuple<gbbs::uintE, float>;
-  auto vd = pbbs::new_array_no_init<vertex_data>(graph.n);
-  auto ed = pbbs::new_array_no_init<edge_type>(graph.m);
-  pbbs::parallel_for(0, graph.n, [&] (size_t i) {
-    vd[i].degree = graph.v_data[i].degree;
-    vd[i].neighbors = ed + graph.v_data[i].offset;
-  });
-  pbbs::parallel_for(0, graph.m, [&] (size_t i) {
-    ed[i] = std::make_tuple(
-        std::get<0>(graph.e0[i]), FloatFromWeight(std::get<1>(graph.e0[i]))); //graph.e0[i];
-  });
-  auto g = gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>(graph.n, graph.m, vd, [vd, ed] () {
-      pbbs::free_array(vd);
-      pbbs::free_array(ed);
-  });
-  return g;
-}
-
 absl::Status Main() {
   //std::cout.precision(17);
   gbbs::pcm_init();
@@ -266,9 +244,7 @@ absl::Status Main() {
   }
 
   std::unique_ptr<InMemoryClusterer> clusterer;
-  if (clusterer_name == "ParallelAffinityClusterer") {
-    clusterer.reset(new ParallelAffinityClusterer);
-  } else if (clusterer_name == "ParallelCorrelationClusterer") {
+  if (clusterer_name == "ParallelCorrelationClusterer") {
     clusterer.reset(new ParallelCorrelationClusterer);
   } else if (clusterer_name == "ParallelModularityClusterer") {
     clusterer.reset(new ParallelModularityClusterer);
@@ -288,22 +264,9 @@ auto begin_read = std::chrono::steady_clock::now();
   bool float_weighted = absl::GetFlag(FLAGS_float_weighted);
   std::size_t n = 0;
 
-  gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float> g;
-  if (float_weighted) {
-    auto G = gbbs::gbbs_io::read_weighted_symmetric_graph<float>(
-            input_file.c_str(), false);
-    gbbs::alloc_init(G);
-    // Transform to pointer graph
-    n = G.n;
-    g = CopyGraph(G);
-  } else {
-    auto G = gbbs::gbbs_io::read_unweighted_symmetric_graph(input_file.c_str(), false);
-    gbbs::alloc_init(G);
-    // Transform to pointer graph
-    n = G.n;
-    g = CopyGraph(G);
-  }
-  clusterer->MutableGraph()->graph_ = absl::make_unique<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>(g);
+  auto g = gbbs::gbbs_io::read_compressed_symmetric_graph<pbbslib::empty>(
+                input_file.c_str(), false, false);
+  clusterer->MutableGraph()->graph_ = absl::make_unique<gbbs::symmetric_graph<gbbs::csv_bytepd_amortized, pbbslib::empty>>(g);
   /*if (float_weighted) {
     const auto edge_list{
         gbbs::gbbs_io::read_weighted_edge_list<float>(input_file.c_str())};

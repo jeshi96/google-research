@@ -34,7 +34,7 @@ namespace in_memory {
 
 double ComputeModularity(
 InMemoryClusterer::Clustering& initial_clustering,
-gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& graph,
+gbbs::symmetric_graph<gbbs::csv_bytepd_amortized, pbbslib::empty>& graph,
 double total_edge_weight, std::vector<gbbs::uintE>& cluster_ids,
 double resolution);
 

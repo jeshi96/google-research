@@ -35,23 +35,20 @@ namespace in_memory {
 
 double ComputeModularity(
 InMemoryClusterer::Clustering& initial_clustering,
-gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>& graph,
+gbbs::symmetric_graph<gbbs::csv_bytepd_amortized, pbbslib::empty>& graph,
 double total_edge_weight, std::vector<gbbs::uintE>& cluster_ids,
 double resolution){
   total_edge_weight = 0;
   double modularity = 0;
   for (std::size_t i = 0; i < graph.n; i++) {
     auto vtx = graph.get_vertex(i);
-    auto nbhrs = vtx.getOutNeighbors();
-    double deg_i = vtx.getOutDegree();
-    for (std::size_t j = 0; j < deg_i; j++) {
-      total_edge_weight++;
-      auto nbhr = std::get<0>(nbhrs[j]);
-      //double deg_nbhr = graph.get_vertex(nbhr).getOutDegree();
-      if (cluster_ids[i] == cluster_ids[nbhr]) {
+    auto map_f = [&](gbbs::uintE u, gbbs::uintE nbhr, pbbslib::empty weight) {
+        total_edge_weight++;
+        if (cluster_ids[i] == cluster_ids[nbhr]) {
         modularity++;
-      }
-    }
+       }
+      };
+      vtx.mapOutNgh(i, map_f, false);
   }
   //modularity = modularity / 2; // avoid double counting
   for (std::size_t i = 0; i < initial_clustering.size(); i++) {
