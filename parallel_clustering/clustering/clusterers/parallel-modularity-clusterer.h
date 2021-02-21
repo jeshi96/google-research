@@ -75,13 +75,14 @@ double resolution){
 // Also, note that the input graph is required to be undirected.
 template<class ClusterGraph>
 class ParallelModularityClusterer : public ParallelCorrelationClusterer<ClusterGraph>{
- public:
+public:
+  GbbsGraph<ClusterGraph> graph_;
   using ClusterId = gbbs::uintE;
 
 
   // initial_clustering must include every node in the range
   // [0, MutableGraph().NumNodes()) exactly once.
-  absl::Status RefineClusters(const ClustererConfig& clusterer_config,
+  absl::Status RefineClusters(const ClustererConfig& clusterer_config2,
                               Clustering* initial_clustering) const override{
   std::cout << "Begin modularity" << std::endl;
 

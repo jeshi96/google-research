@@ -43,12 +43,13 @@ using Clustering = std::vector<std::vector<gbbs::uintE>>;
 template<class ClusterGraph>
 class ModularityClusterer : public CorrelationClusterer<ClusterGraph> {
  public:
+  GbbsGraph<ClusterGraph> graph_;
   using ClusterId = gbbs::uintE;
 
 
   // initial_clustering must include every node in the range
   // [0, MutableGraph().NumNodes()) exactly once.
-  absl::Status RefineClusters(const ClustererConfig& clusterer_config,
+  absl::Status RefineClusters(const ClustererConfig& clusterer_config2,
                               Clustering* initial_clustering) const override {
   std::cout << "Begin modularity" << std::endl;
 pbbs::timer t; t.start();
