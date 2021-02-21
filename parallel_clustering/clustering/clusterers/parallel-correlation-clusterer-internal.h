@@ -28,6 +28,22 @@
 #include "external/gbbs/gbbs/vertex_subset.h"
 #include "clustering/in-memory-clusterer.h"
 
+
+#include "absl/strings/str_cat.h"
+#include "clustering/clusterers/correlation-clusterer-util.h"
+#include "external/gbbs/gbbs/bridge.h"
+#include "external/gbbs/gbbs/gbbs.h"
+#include "external/gbbs/gbbs/macros.h"
+#include "external/gbbs/pbbslib/random_shuffle.h"
+#include "external/gbbs/pbbslib/sample_sort.h"
+#include "external/gbbs/pbbslib/seq.h"
+#include "external/gbbs/pbbslib/sequence_ops.h"
+#include "external/gbbs/pbbslib/utilities.h"
+#include "parallel/parallel-graph-utils.h"
+#include "parallel/parallel-sequence-ops.h"
+#include "external/gbbs/gbbs/pbbslib/sparse_table.h"
+
+
 namespace research_graph {
 namespace in_memory {
 
