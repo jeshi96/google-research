@@ -266,6 +266,7 @@ auto begin_read = std::chrono::steady_clock::now();
 
   auto g = gbbs::gbbs_io::read_compressed_symmetric_graph<pbbslib::empty>(
                 input_file.c_str(), false, false);
+  gbbs::alloc_init(g);
   clusterer->MutableGraph()->graph_ = absl::make_unique<gbbs::symmetric_graph<gbbs::csv_bytepd_amortized, pbbslib::empty>>(g);
   /*if (float_weighted) {
     const auto edge_list{
