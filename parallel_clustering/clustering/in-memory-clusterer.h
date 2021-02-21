@@ -38,7 +38,7 @@ class InMemoryClusterer {
   // interfaces for accessing it.
   // The node ids are consecutive, 0-based integers. In particular, adding a
   // node of id k to an empty graph creates k+1 nodes 0, ..., k.
-  template<ClusterGraph>
+  template<class ClusterGraph>
   class Graph {
    public:
     using NodeId = gbbs::uintE;
