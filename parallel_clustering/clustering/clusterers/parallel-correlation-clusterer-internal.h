@@ -327,7 +327,7 @@ template<class Graph>
       return 0;
     };
     auto vtx = graph.get_vertex(i);
-    shifted_edge_weight[i] = vtx.reduceOutNgh<double>(
+    shifted_edge_weight[i] = vtx.template reduceOutNgh<double>(
         i, intra_cluster_sum_map_f, add_m);
   });
   double objective =
@@ -368,7 +368,7 @@ template<class Graph>
       return 0;
     };
     auto vtx = graph.get_vertex(i);
-    shifted_edge_weight[i] = vtx.reduceOutNgh<double>(
+    shifted_edge_weight[i] = vtx.template reduceOutNgh<double>(
         i, intra_cluster_sum_map_f, add_m);
   });
   double objective =
