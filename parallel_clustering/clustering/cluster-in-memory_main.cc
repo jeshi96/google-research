@@ -77,47 +77,6 @@ float FloatFromWeight(float weight) { return weight; }
 float FloatFromWeight(pbbslib::empty weight) { return 1; }
 
 
-template <typename Weight>
-absl::StatusOr<std::size_t> WriteEdgeListAsGraph(
-    InMemoryClusterer::Graph* graph,
-    const std::vector<gbbs::gbbs_io::Edge<Weight>>& edge_list,
-    bool is_symmetric_graph) {
-  std::size_t n = 0;
-  if (is_symmetric_graph) {
-    auto gbbs_graph{gbbs::gbbs_io::edge_list_to_symmetric_graph(edge_list)};
-    n = gbbs_graph.n;
-    auto status = GbbsGraphToInMemoryClustererGraph<
-        gbbs::symmetric_graph<gbbs::symmetric_vertex, Weight>>(graph,
-                                                               gbbs_graph);
-    RETURN_IF_ERROR(status);
-    gbbs_graph.del();
-  } else {
-    auto gbbs_graph{gbbs::gbbs_io::edge_list_to_asymmetric_graph(edge_list)};
-    n = gbbs_graph.n;
-    auto status = GbbsGraphToInMemoryClustererGraph<
-        gbbs::asymmetric_graph<gbbs::asymmetric_vertex, Weight>>(graph,
-                                                                 gbbs_graph);
-    RETURN_IF_ERROR(status);
-    gbbs_graph.del();
-  }
-  return n;
-}
-
-absl::Status WriteClustering(const char* filename,
-                             InMemoryClusterer::Clustering clustering) {
-  std::ofstream file{filename};
-  if (!file.is_open()) {
-    return absl::NotFoundError("Unable to open file.");
-  }
-  for (gbbs::uintE i = 0; i < clustering.size(); i++) {
-    for (auto node_id : clustering[i]) {
-      file << node_id << "\t";
-    }
-    file << std::endl;
-  }
-  return absl::OkStatus();
-}
-
 void split(const std::string &s, char delim, std::vector<gbbs::uintE> &elems) {
   std::stringstream ss;
   ss.str(s);
@@ -143,7 +102,7 @@ absl::Status ReadCommunities(const char* filename,
   return absl::OkStatus();
 }
 
-absl::Status CompareCommunities(const char* filename, InMemoryClusterer::Clustering clustering) {
+absl::Status CompareCommunities(const char* filename, std::vector<std::vector<gbbs::uintE>> clustering) {
   std::vector<std::vector<gbbs::uintE>> communities;
   ReadCommunities(filename, communities);
   // precision = num correct results (matches b/w clustering and comm) / num returned results (in clustering)

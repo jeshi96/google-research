@@ -46,8 +46,6 @@ class InMemoryClusterer {
     std::unique_ptr<ClusterGraph>
       graph_;
 
-    virtual ~Graph() = default;
-
   };
 
   using NodeId = gbbs::uintE;
