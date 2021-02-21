@@ -249,7 +249,7 @@ std::cout << "Num workers: " << pbbs::num_workers() << std::endl;
 std::cout << "Graph: " << input_file << std::endl;
   
 auto begin_cluster = std::chrono::steady_clock::now();
-  InMemoryClusterer::Clustering clustering;
+ std::vector<std::vector<gbbs::uintE>> clustering;
   ASSIGN_OR_RETURN(clustering, clusterer->Cluster(config));
 auto end_cluster = std::chrono::steady_clock::now();
 PrintTime(begin_cluster, end_cluster, "Cluster");
@@ -258,9 +258,6 @@ PrintTime(begin_cluster, end_cluster, "Cluster");
   if (!input_communities.empty()) CompareCommunities(input_communities.c_str(), clustering);
 
   gbbs::alloc_finish();
-
-  std::string output_file = absl::GetFlag(FLAGS_output_clustering);
-  if (!output_file.empty()) WriteClustering(output_file.c_str(), clustering);
 
   return absl::OkStatus();
 }
