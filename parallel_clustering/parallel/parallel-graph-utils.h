@@ -27,12 +27,8 @@
 
 namespace research_graph {
 
-namespace {
-
-inline float FloatFromWeightPGU(float weight) { return weight; }
-inline float FloatFromWeightPGU(pbbslib::empty weight) { return 1; }
-
-}
+float FloatFromWeightPGU(float weight);
+float FloatFromWeightPGU(pbbslib::empty weight);
 
 // Retrieves a list of inter-cluster edges, given a set of cluster_ids
 // that form the vertices of a new graph. Maps all edges in original_graph

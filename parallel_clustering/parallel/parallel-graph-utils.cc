@@ -30,6 +30,9 @@
 
 namespace research_graph {
 
+float FloatFromWeightPGU(float weight) { return weight; }
+float FloatFromWeightPGU(pbbslib::empty weight) { return 1; }
+
 std::vector<gbbs::uintE> GetOffsets(
     const std::function<gbbs::uintE(std::size_t)>& get_key,
     gbbs::uintE num_keys, std::size_t n) {
