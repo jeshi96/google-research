@@ -272,7 +272,7 @@ pbbs::timer t; t.start();
     using H = std::unique_ptr<ClusteringHelper>;
     using GX = std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>;
     refine.recurse_helpers = gbbs::sequence<H>(num_iterations, [](std::size_t i){return H(nullptr);});
-    refine.recurse_graphs = gbbs::sequence<GX>(num_iterations, [](std::size_t i){return G(nullptr);});
+    refine.recurse_graphs = gbbs::sequence<GX>(num_iterations, [](std::size_t i){return GX(nullptr);});
   }
 
   std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>
