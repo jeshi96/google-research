@@ -199,7 +199,7 @@ class CorrelationClusterer : public InMemoryClusterer<ClusterGraph> {
     clustering[i] = {static_cast<gbbs::uintE>(i)};
   }
 
-  RETURN_IF_ERROR(RefineClusters(clusterer_config, &clustering));
+  RETURN_IF_ERROR(RefineClusters(config, &clustering));
 
   return clustering;
 }
