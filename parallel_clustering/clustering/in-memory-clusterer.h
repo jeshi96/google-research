@@ -50,14 +50,13 @@ class InMemoryClusterer {
 
   };
 
-  using NodeId = typename Graph::NodeId;
-  using AdjacencyList = typename Graph::AdjacencyList;
+  using NodeId = gbbs::uintE;
 
   // Represents clustering: each element of the vector contains the set of
   // NodeIds in one cluster. We call a clustering non-overlapping if the
   // elements of the clustering are nonempty vectors that together contain each
   // NodeId exactly once.
-  using Clustering = std::vector<std::vector<NodeId>>;
+  using Clustering = std::vector<std::vector<gbbs::uintE>>;
 
   virtual ~InMemoryClusterer() {}
 

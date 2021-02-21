@@ -186,21 +186,32 @@ bool IterateBestMoves(int num_inner_iterations, const ClustererConfig& clusterer
 // ../config.proto for more. This uses the CorrelationClustererConfig proto.
 // Also, note that the input graph is required to be undirected.
 template<class ClusterGraph>
-class CorrelationClusterer : public InMemoryClusterer {
+class CorrelationClusterer : public InMemoryClusterer<ClusterGraph> {
  public:
   using ClusterId = gbbs::uintE;
 
   Graph* MutableGraph() override { return &graph_; }
 
   absl::StatusOr<Clustering> Cluster(
-      const ClustererConfig& config) const override;
+      const ClustererConfig& config) const override{
+  Clustering clustering(graph_.Graph()->n);
+
+  // Create all-singletons initial clustering
+  for (std::size_t i = 0; i < graph_.Graph()->n; i++) {
+    clustering[i] = {static_cast<gbbs::uintE>(i)};
+  }
+
+  RETURN_IF_ERROR(RefineClusters(clusterer_config, &clustering));
+
+  return clustering;
+}
 
   // initial_clustering must include every node in the range
   // [0, MutableGraph().NumNodes()) exactly once.
   template<class G>
   absl::Status RefineClusters_subroutine(
     const ClustererConfig& clusterer_config,
-    InMemoryClusterer::Clustering* initial_clustering,
+    Clustering* initial_clustering,
     std::vector<double> node_weights,
     G* graph) const {
 pbbs::timer t; t.start();
@@ -292,7 +303,7 @@ pbbs::timer t; t.start();
 
     // Compress graph
     GraphWithWeights new_compressed_graph;
-    InMemoryClusterer::Clustering new_clustering{};
+    Clustering new_clustering{};
     for (std::size_t i = 0; i < n; i++) {
         local_cluster_ids[i] = helper->ClusterIds()[i];
     }
@@ -387,7 +398,7 @@ t.stop(); t.reportTotal("Actual Cluster Time: ");
   template<class Graph>
   absl::Status RefineClusters_subroutine(
     const ClustererConfig& clusterer_config,
-    InMemoryClusterer::Clustering* initial_clustering,
+    Clustering* initial_clustering,
     Graph* graph) const{
   std::vector<double> empty;
   return RefineClusters_subroutine(clusterer_config, initial_clustering, empty, graph);
@@ -410,7 +421,7 @@ t.stop(); t.reportTotal("Actual Cluster Time: ");
 template<class G>
   absl::Status RefineClusters(
     const ClustererConfig& clusterer_config,
-    InMemoryClusterer::Clustering* initial_clustering,
+    Clustering* initial_clustering,
     std::vector<double> node_weights,
     G* graph, double original_resolution = 0) const {
   const auto& config = clusterer_config.correlation_clusterer_config();
@@ -426,7 +437,7 @@ template<class G>
   template<class G>
     absl::Status RefineClusters(
     const ClustererConfig& clusterer_config,
-    InMemoryClusterer::Clustering* initial_clustering,
+   Clustering* initial_clustering,
     G* graph) const{
   std::vector<double> empty;
   return RefineClusters(clusterer_config, initial_clustering, empty, graph);

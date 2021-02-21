@@ -239,16 +239,27 @@ absl::Status Main() {
                         "research_graph.in_memory.ClustererConfig proto: %s",
                         clusterer_config));
   }
+  bool float_weighted = absl::GetFlag(FLAGS_float_weighted);
+  using FloatGraph = gbbs::symmetric_graph<gbbs::symmetric_vertex, float>;
+  using UnweightedGraph = gbbs::symmetric_graph<gbbs::symmetric_vertex, pbbslib::empty>;
 
   std::unique_ptr<InMemoryClusterer> clusterer;
-  if (clusterer_name == "ParallelCorrelationClusterer") {
-    clusterer.reset(new ParallelCorrelationClusterer);
-  } else if (clusterer_name == "ParallelModularityClusterer") {
-    clusterer.reset(new ParallelModularityClusterer);
-  } else if (clusterer_name == "CorrelationClusterer") {
-    clusterer.reset(new CorrelationClusterer);
-  } else if (clusterer_name == "ModularityClusterer") {
-    clusterer.reset(new ModularityClusterer);
+  if (clusterer_name == "ParallelCorrelationClusterer" && float_weighted) {
+    clusterer.reset(new ParallelCorrelationClusterer<FloatGraph>);
+  } else if (clusterer_name == "ParallelModularityClusterer" && float_weighted) {
+    clusterer.reset(new ParallelModularityClusterer<FloatGraph>);
+  } else if (clusterer_name == "CorrelationClusterer" && float_weighted) {
+    clusterer.reset(new CorrelationClusterer<FloatGraph>);
+  } else if (clusterer_name == "ModularityClusterer" && float_weighted) {
+    clusterer.reset(new ModularityClusterer<FloatGraph>);
+  } else if (clusterer_name == "ParallelCorrelationClusterer" && !float_weighted) {
+    clusterer.reset(new ParallelCorrelationClusterer<UnweightedGraph>);
+  } else if (clusterer_name == "ParallelModularityClusterer" && !float_weighted) {
+    clusterer.reset(new ParallelModularityClusterer<UnweightedGraph>);
+  } else if (clusterer_name == "CorrelationClusterer" && !float_weighted) {
+    clusterer.reset(new CorrelationClusterer<UnweightedGraph>);
+  } else if (clusterer_name == "ModularityClusterer" && !float_weighted) {
+    clusterer.reset(new ModularityClusterer<UnweightedGraph>);
   }
   else {
     return absl::UnimplementedError(
@@ -258,7 +269,7 @@ absl::Status Main() {
 auto begin_read = std::chrono::steady_clock::now();
   std::string input_file = absl::GetFlag(FLAGS_input_graph);
   //bool is_symmetric_graph = absl::GetFlag(FLAGS_is_symmetric_graph); // Assume symmetric
-  bool float_weighted = absl::GetFlag(FLAGS_float_weighted);
+  
   std::size_t n = 0;
 
   if (float_weighted) {
