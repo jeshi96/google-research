@@ -68,8 +68,8 @@ class InMemoryClusterer {
     virtual absl::Status FinishImport();
   };
 
-  using NodeId = Graph::NodeId;
-  using AdjacencyList = Graph::AdjacencyList;
+  using NodeId = Graph<ClusterGraph>::NodeId;
+  using AdjacencyList = Graph<ClusterGraph>::AdjacencyList;
 
   // Represents clustering: each element of the vector contains the set of
   // NodeIds in one cluster. We call a clustering non-overlapping if the
@@ -80,7 +80,7 @@ class InMemoryClusterer {
   virtual ~InMemoryClusterer() {}
 
   // Accessor to the maintained graph. Use it to build the graph.
-  virtual Graph* MutableGraph() = 0;
+  virtual Graph<ClusterGraph>* MutableGraph() = 0;
 
   // Clusters the currently maintained graph using the given set of parameters.
   // Returns a clustering, or an error if the algorithm failed to cluster the
