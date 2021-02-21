@@ -65,7 +65,9 @@ class InMemoryClusterer {
     // IMPLEMENTATIONS MUST ALLOW CONCURRENT CALLS TO Import()!
     virtual absl::Status Import(AdjacencyList adjacency_list) = 0;
 
-    virtual absl::Status FinishImport();
+    virtual absl::Status FinishImport(){
+  return absl::OkStatus();
+}
   };
 
   using NodeId = typename Graph::NodeId;
@@ -99,26 +101,7 @@ class InMemoryClusterer {
     return absl::OkStatus();
   }
 
-  // Provides a pointer to a vector that contains string ids corresponding to
-  // the NodeIds. If set, the ids from the provided map are used in the log and
-  // error messages. The vector must live during all method calls of this
-  // object. This call does *not* take ownership of the pointee. Using this
-  // function is not required. If this function is never called, the ids are
-  // converted to strings using absl::StrCat.
-  void set_node_id_map(const std::vector<std::string>* node_id_map) {
-    node_id_map_ = node_id_map;
-  }
 
- protected:
-  // Returns the string id corresponding to a given NodeId. If set_node_id_map
-  // was called, uses the map to get the ids. Otherwise, returns the string
-  // representation of the id.
-  std::string StringId(NodeId id) const;
-
- private:
-  // NodeId map set by set_node_id_map(). May be left to nullptr even after
-  // initialization.
-  const std::vector<std::string>* node_id_map_ = nullptr;
 };
 
 }  // namespace in_memory
