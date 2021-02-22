@@ -9,19 +9,9 @@ import math
 import scann
 from sklearn import datasets as skdatasets
 
-#digits = skdatasets.load_digits()
-#dataset = digits.data
-#target_id = digits.target
-
-with tempfile.TemporaryDirectory() as tmp:
-    response = requests.get("http://ann-benchmarks.com/glove-100-angular.hdf5")
-    loc = os.path.join(tmp, "glove.hdf5")
-    with open(loc, 'wb') as f:
-        f.write(response.content)
-    
-    glove_h5py = h5py.File(loc, "r")
-dataset = glove_h5py['train']
-
+digits = skdatasets.load_digits()
+dataset = digits.data
+target_id = digits.target
 dataset_shape = dataset.shape
 
 # create scann
@@ -40,7 +30,7 @@ with open("/home/jeshi/snap/digits_50nn", "a+") as out_file:
         out_file.write(str(index) + " " + str(x) + " " + str(distances[index][index_x]) + "\n")
 
 # output target
-#with open("/home/jeshi/snap/digits_targetid", "a+") as outfile:
-#  for x in target_id:
-#    print(str(x) + "\n")
+with open("/home/jeshi/snap/digits_targetid", "a+") as outfile:
+  for x in target_id:
+    print(str(x) + "\n")
 
