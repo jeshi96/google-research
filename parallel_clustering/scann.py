@@ -12,8 +12,6 @@ from sklearn import datasets as skdatasets
 #digits = skdatasets.load_digits()
 #dataset = digits.data
 #target_id = digits.target
-#dataset_shape = dataset.shape
-#print(dataset_shape)
 
 with tempfile.TemporaryDirectory() as tmp:
     response = requests.get("http://ann-benchmarks.com/glove-100-angular.hdf5")
@@ -23,6 +21,8 @@ with tempfile.TemporaryDirectory() as tmp:
     
     glove_h5py = h5py.File(loc, "r")
 dataset = glove_h5py['train']
+
+dataset_shape = dataset.shape
 
 # create scann
 normalized_dataset = dataset / np.linalg.norm(dataset, axis=1)[:, np.newaxis]
