@@ -45,23 +45,23 @@ def run_7():
           xx = 10**(x + 2)
         if y == 0:
           filename = "rmat_" + str(xx)
-          prefile = "rmat" + str(xx)
+          pre_file = "rmat" + str(xx)
         else:
           filename = "rmat2_" + str(xx)
-          prefile = "rmat2" + str(xx)
-      for r in resolutions:
-        for ref_idx, ref in enumerate(refines):
-          for asy_idx, asy in enumerate(async_sync):
-            for move_idx, move in enumerate(moves):
-              for nw in num_workers:
-                if True: #for i in range(4):
+          pre_file = "rmat2" + str(xx)
+        for r in resolutions:
+          for ref_idx, ref in enumerate(refines):
+            for asy_idx, asy in enumerate(async_sync):
+              for move_idx, move in enumerate(moves):
+                for nw in num_workers:
+                  for i in range(4):
                     timer = "timeout 6h"
-                  out_filename = write_dir + programs_pres[prog_idx] + "_" + pre_file + "_" + str(r) + "_" + asy + "_" + ref + "_" + moves_pres[move_idx]+"_" + str(nw) + ".out"
-                  ss = ("NUM_THREADS="+str(nw)+" "+timer+" bazel run //clustering:cluster-in-memory_main -- --"
-                  "input_graph=" + read_dir  + filename + " --clusterer_name=" + prog + " "
-                  " --clusterer_config='correlation_clusterer_config"
-                  " {resolution: " + str(r) + ", subclustering_method: NONE_SUBCLUSTERING, "
-                  "clustering_moves_method: LOUVAIN , preclustering_method: NONE_PRECLUSTERING, "
-                  "refine: "+ref+", async: "+asy+", move_method: "+move+"}'")
-                  out = shellGetOutput(ss)
-                  appendToFile(out, out_filename)
+                    out_filename = write_dir + programs_pres[prog_idx] + "_" + pre_file + "_" + str(r) + "_" + asy + "_" + ref + "_" + moves_pres[move_idx]+"_" + str(nw) + ".out"
+                    ss = ("NUM_THREADS="+str(nw)+" "+timer+" bazel run //clustering:cluster-in-memory_main -- --"
+                    "input_graph=" + read_dir  + filename + " --clusterer_name=" + prog + " "
+                    " --clusterer_config='correlation_clusterer_config"
+                    " {resolution: " + str(r) + ", subclustering_method: NONE_SUBCLUSTERING, "
+                    "clustering_moves_method: LOUVAIN , preclustering_method: NONE_PRECLUSTERING, "
+                    "refine: "+ref+", async: "+asy+", move_method: "+move+"}'")
+                    out = shellGetOutput(ss)
+                    appendToFile(out, out_filename)
