@@ -7,7 +7,7 @@ import time
 import math
 
 import scann
-from sklearn import skdatasets
+from sklearn import datasets as skdatasets
 
 def main():
   digits = skdatasets.load_digits()
