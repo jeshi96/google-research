@@ -19,7 +19,7 @@ def main():
   # create scann
   normalized_dataset = dataset / np.linalg.norm(dataset, axis=1)[:, np.newaxis]
   nl = int(math.sqrt(dataset_shape[0]))
-  searcher = scann.scann_ops_pybind.builder(normalized_dataset, 10, "dot_product").tree(
+  searcher = scann.scann_ops.build(normalized_dataset, 10, "dot_product").tree(
     num_leaves=2000, num_leaves_to_search=100, training_sample_size=250000).score_ah(
     2, anisotropic_quantization_threshold=0.2).reorder(100).build()
   neighbors, distances = searcher.search_batched(dataset, final_num_neighbors=51)
