@@ -32,5 +32,5 @@ with open("/home/jeshi/snap/digits_50nn", "a+") as out_file:
 # output target
 with open("/home/jeshi/snap/digits_targetid", "a+") as outfile:
   for x in target_id:
-    out_file.write(str(x) + "\n")
+    outfile.write(str(x) + "\n")
 
