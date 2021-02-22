@@ -7,13 +7,14 @@ import time
 import math
 
 import scann
-from sklearn import datasets
+from sklearn import skdatasets
 
 def main():
-  digits = datasets.load_digits()
+  digits = skdatasets.load_digits()
   dataset = digits.data
   target_id = digits.target
   dataset_shape = dataset.shape
+  print(dataset_shape)
 
   # create scann
   normalized_dataset = dataset / np.linalg.norm(dataset, axis=1)[:, np.newaxis]
