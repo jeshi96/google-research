@@ -26,19 +26,19 @@ def read_and_print(read_filename, num_rounds,avg_obj, avg_time, std_dev_obj, std
       std_dev_time[r_idx] = sqrt(sum([(x - avg_time[r_idx]) ** 2 for x in times]) / num_rounds)
 
 def main():
-  programs = ["ParallelModularityClusterer","ModularityClusterer"]
-  programs_pres = ["pm","m"]
-  files = ["amazon_h","dblp_h", "lj_h","orkut_h"]
-  pres = ["amazon","dblp","lj","orkut"]
+  programs = ["ParallelCorrelationClusterer"]
+  programs_pres = ["pc"]
+  files = ["amazon_h","orkut_h"]#,"dblp_h", "lj_h","orkut_h","friendster_h"]
+  pres = ["amazon","orkut"]#,"dblp","lj","orkut","friendster"]
   async_sync = ["true"]
   refines = ["true"]
   moves = ["NBHR_MOVE"]
   moves_pres = ["nbhr"]
-  resolutions = [0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
-  num_workers = [60]#[1, 2, 4, 8, 16, 30, 60]
+  resolutions = [0.01, 0.85]#[0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
+  num_workers = [1, 2, 4, 8, 16, 30, 60]
   read_dir = "/home/jeshi/snap/"
-  write_dir = "/home/jeshi/clustering_out_exp5_new/"
-  length = len(resolutions)
+  write_dir = "/home/jeshi/clustering_out_exp6/"
+  length = len(num_workers)
   avg_num_clusters = [0]*length
   avg_obj = [0]*length
   std_dev_obj = [0]*length
@@ -50,13 +50,13 @@ def main():
       for ref_idx, ref in enumerate(refines):
         for asy_idx, asy in enumerate(async_sync):
           for move_idx, move in enumerate(moves):
-            for nw in num_workers:
-              print("Prog: " + prog + ", File: " + str(pres[file_idx]))
-              for r_idx, r in enumerate(resolutions):
+            for r2_idx, r in enumerate(resolutions):
+              print("Prog: " + prog + ", File: " + str(pres[file_idx]) + ", Res: " + r)
+              for r_idx, nw in enumerate(num_workers):
                 read_filename = write_dir + programs_pres[prog_idx] + "_" + pres[file_idx] + "_" + str(r) + "_" + asy + "_" + ref + "_" + moves_pres[move_idx]+"_" + str(nw) + ".out"
                 read_and_print(read_filename, num_rounds, avg_obj, avg_time, std_dev_obj, std_dev_time, r_idx)
               # now we must output
-              for r_idx, x in enumerate(resolutions):
+              for r_idx, x in enumerate(num_workers):
                 print(str(x) + "\t"),
                 print(str(avg_time[r_idx]) + "\t"),
                 print(str(std_dev_time[r_idx]) + "\t"),
