@@ -169,6 +169,8 @@ bool IterateBestMoves(int num_inner_iterations, const ClustererConfig& clusterer
   }
 
   // Iterate over best moves
+  bool all_iter = clusterer_config.correlation_clusterer_config().all_iter();
+  if (!all_iter) {
   int local_iter = 0;
   for (local_iter = 0; local_iter < num_inner_iterations && local_moved; ++local_iter) {
     auto new_moved_subset =
@@ -177,6 +179,19 @@ bool IterateBestMoves(int num_inner_iterations, const ClustererConfig& clusterer
     moved_subset.swap(new_moved_subset);
     local_moved = !moved_subset.empty();
     moved |= local_moved;
+  }
+  std::cout << "Num inner: " << local_iter << std::endl;
+  return moved;
+  }
+  int local_iter = 0;
+  while(local_moved){
+        auto new_moved_subset =
+      BestMovesForVertexSubset(current_graph, num_nodes, moved_subset,
+                              helper, clusterer_config, subclustering);
+    moved_subset.swap(new_moved_subset);
+    local_moved = !moved_subset.empty();
+    moved |= local_moved;
+    local_iter++;
   }
   std::cout << "Num inner: " << local_iter << std::endl;
   return moved;
@@ -260,6 +275,9 @@ pbbs::timer t; t.start();
           "Correlation clustering moves must be DEFAULT_CLUSTER_MOVES or "
           "LOUVAIN.");
   }
+  bool all_iter = clusterer_config.correlation_clusterer_config().all_iter();
+  // hack
+  if (all_iter) num_iterations = 1000;
 
   // Initialize refinement data structure
   CorrelationClustererRefine refine{};

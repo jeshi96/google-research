@@ -158,6 +158,8 @@ message CorrelationClustererConfig {
   }
   optional MoveMethod move_method = 16
       [default = NBHR_CLUSTER_MOVE];
+  
+  optional bool all_iter = 17;
 }
 
 message KcoreConfig {
