@@ -52,12 +52,15 @@ std::vector<std::vector<gbbs::uintE>> SeqOutputIndicesById(
     return finished_indices;
   }
   // Sort all vertices by cluster id
-  std::vector<B> indices_sort(num_indices);
+  /*std::vector<B> indices_sort(num_indices);
   for (std::size_t i = 0; i < num_indices; i++) {
     indices_sort[i] = get_indices_func(i);
-    assert(indices_sort[i] < index_ids.size());
   }
-  std::sort(indices_sort.begin(), indices_sort.end(), [&](B a, B b) -> bool{index_ids[a] < index_ids[b];});
+  std::sort(indices_sort.begin(), indices_sort.end(), [&](B a, B b) -> bool{index_ids[a] < index_ids[b];});*/
+
+  auto indices_sort = pbbs::sample_sort(
+      pbbs::delayed_seq<B>(num_indices, get_indices_func),
+      [&](B a, B b) { return index_ids[a] < index_ids[b]; }, true);
 
   // Boundary indices indicate sections corresponding to clusters
   std::vector<std::vector<B>> finished_indices(1);
