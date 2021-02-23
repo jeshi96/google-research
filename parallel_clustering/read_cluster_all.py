@@ -38,7 +38,7 @@ def main():
   num_workers = [60]#[1, 2, 4, 8, 16, 30, 60]
   read_dir = "/home/jeshi/snap/"
   write_dir = "/home/jeshi/clustering_out_exp5_new/"
-  length = len(files)
+  length = len(resolutions)
   avg_num_clusters = [0]*length
   avg_obj = [0]*length
   std_dev_obj = [0]*length
