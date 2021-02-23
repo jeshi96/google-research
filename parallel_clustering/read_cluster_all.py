@@ -26,8 +26,8 @@ def read_and_print(read_filename, num_rounds,avg_obj, avg_time, std_dev_obj, std
       std_dev_time[r_idx] = sqrt(sum([(x - avg_time[r_idx]) ** 2 for x in times]) / num_rounds)
 
 def main():
-  programs = ["ParallelCorrelationClusterer","CorrelationClusterer"]
-  programs_pres = ["pc","c"]
+  programs = ["ParallelModularityClusterer","ModularityClusterer"]
+  programs_pres = ["pm","m"]
   files = ["amazon_h","dblp_h", "lj_h","orkut_h"]
   pres = ["amazon","dblp","lj","orkut"]
   async_sync = ["true"]
@@ -54,7 +54,7 @@ def main():
               print("Prog: " + prog + ", File: " + str(pres[file_idx]))
               for r_idx, r in enumerate(resolutions):
                 read_filename = write_dir + programs_pres[prog_idx] + "_" + pres[file_idx] + "_" + str(r) + "_" + asy + "_" + ref + "_" + moves_pres[move_idx]+"_" + str(nw) + ".out"
-                read_and_print(read_filename, num_rounds, avg_obj, avg_time, std_dev_obj, std_dev_time, file_idx)
+                read_and_print(read_filename, num_rounds, avg_obj, avg_time, std_dev_obj, std_dev_time, r_idx)
               # now we must output
               for r_idx, x in enumerate(resolutions):
                 print(str(x) + "\t"),
