@@ -55,8 +55,9 @@ std::vector<std::vector<gbbs::uintE>> SeqOutputIndicesById(
   std::vector<B> indices_sort(num_indices);
   for (std::size_t i = 0; i < num_indices; i++) {
     indices_sort[i] = get_indices_func(i);
+    assert(indices_sort[i] < index_ids.size());
   }
-  std::sort(indices_sort.begin(), indices_sort.end(), [&](B a, B b) {index_ids[a] < index_ids[b];});
+  std::sort(indices_sort.begin(), indices_sort.end(), [&](B a, B b) -> bool{index_ids[a] < index_ids[b];});
 
   // Boundary indices indicate sections corresponding to clusters
   std::vector<std::vector<B>> finished_indices(1);
