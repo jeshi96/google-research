@@ -52,7 +52,7 @@ def main():
           for move_idx, move in enumerate(moves):
             for nw in num_workers:
               print("Prog: " + prog + ", File: " + str(pres[file_idx]))
-              for r _idx, r in enumerate(resolutions):
+              for r_idx, r in enumerate(resolutions):
                 read_filename = write_dir + programs_pres[prog_idx] + "_" + pres[file_idx] + "_" + str(r) + "_" + asy + "_" + ref + "_" + moves_pres[move_idx]+"_" + str(nw) + ".out"
                 read_and_print(read_filename, num_rounds, avg_obj, avg_time, std_dev_obj, std_dev_time, file_idx)
               # now we must output
