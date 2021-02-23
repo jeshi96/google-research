@@ -57,10 +57,10 @@ def main():
                 read_and_print(read_filename, num_rounds, avg_obj, avg_time, std_dev_obj, std_dev_time, file_idx)
               # now we must output
               for r_idx, x in enumerate(resolutions):
-                print(str(x) + "\t")
-                print(str(avg_time[r_idx]) + "\t")
-                print(str(std_dev_time[r_idx]) + "\t")
-                print(str(avg_obj[r_idx]) + "\t")
+                print(str(x) + "\t"),
+                print(str(avg_time[r_idx]) + "\t"),
+                print(str(std_dev_time[r_idx]) + "\t"),
+                print(str(avg_obj[r_idx]) + "\t"),
                 print(str(std_dev_obj[r_idx]))
 
 
