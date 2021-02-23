@@ -31,9 +31,9 @@ def main():
   files = ["amazon_h","orkut_h"]#"dblp_h", "lj_h","orkut_h","friendster_h"]
   pres = ["amazon","orkut"]#"dblp","lj","orkut","friendster"]
   async_sync = ["true"]
-  refines = ["true"]
-  moves = ["NBHR_CLUSTER_MOVE", "NBHR_MOVE"]
-  moves_pres = ["cluster","nbhr"]
+  refines = ["true"] # we already have all, no refine, async
+  moves = ["ALL_MOVE"]
+  moves_pres = ["all"]
   resolutions = [0.01, 0.85]#[0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
   num_workers = [60]#[1, 2, 4, 8, 16, 30, 60]
   read_dir = "/home/jeshi/snap/"
