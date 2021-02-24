@@ -169,6 +169,8 @@ absl::Status ParallelCorrelationClusterer::RefineClusters(
 absl::StatusOr<InMemoryClusterer::Clustering>
 ParallelCorrelationClusterer::Cluster(
     const ClustererConfig& clusterer_config) const {
+      std::cout << "CLUSTER" << std::endl;
+      std::cout << clusterer_config.correlation_clusterer_config().clustering_moves_method() << std::endl;
   InMemoryClusterer::Clustering clustering(graph_.Graph()->n);
   // Create all-singletons initial clustering
   pbbs::parallel_for(0, graph_.Graph()->n, [&](std::size_t i) {
