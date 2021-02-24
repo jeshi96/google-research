@@ -286,7 +286,7 @@ std::cout << "Num workers: " << pbbs::num_workers() << std::endl;
 std::cout << "Graph: " << input_file << std::endl;
   // Must initialize the list allocator for GBBS, to support parallelism.
   // The list allocator seeds using the number of vertices in the input graph.
-std::cout << "HERE: " << config.correlation_clusterer_config().clustering_moves_method() << std::endl;
+std::cout << "HERE: " << config.correlation_clusterer_config().async() << std::endl;
   
 auto begin_cluster = std::chrono::steady_clock::now();
   InMemoryClusterer::Clustering clustering;
