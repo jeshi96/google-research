@@ -195,6 +195,7 @@ BestMovesForVertexSubset(
       if (moved_vertex[moved_subset[i]]) affected_vertices.push_back(moved_subset[i]);
     }
   }
+  using W = typename G::weight_type;
 
   std::vector<bool> affected_neighbors = std::vector<bool>(current_graph->n, false);
     // Mark in moved vertex adjacent vertices
