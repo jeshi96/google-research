@@ -235,6 +235,8 @@ absl::Status Main() {
 
   ClustererConfig config;
   std::string clusterer_config = absl::GetFlag(FLAGS_clusterer_config);
+  std::cout << "Config: " << clusterer_config << std::endl;
+  std::cout << "Name: " << clusterer_name << std::endl;
   if (!google::protobuf::TextFormat::ParseFromString(clusterer_config,
                                                      &config)) {
     return absl::InvalidArgumentError(
