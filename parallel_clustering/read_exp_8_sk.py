@@ -8,14 +8,14 @@ import math
 import sklearn
 
 def community_to_cluster_id(filename):
-  arr = np.zeros([1] , dtype=int)
+  arr = np.zeros(0)
   idx = 0
   with open(filename) as fp:
     for line in fp:
       keys = [x.strip() for x in line.split('\t')]
       for x in keys:
         y = int(x)
-        if y + 1 >= arr.size:
+        if y + 1 > arr.size:
           np.resize(arr, (y + 1))
         arr[y] = idx
       idx += 1
