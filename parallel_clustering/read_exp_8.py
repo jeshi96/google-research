@@ -12,7 +12,7 @@ def read_and_print(read_filename, num_rounds,avg_obj, avg_time, r_idx, precision
       split = [x.strip() for x in line.split(':')]
       if split[0].startswith("# PBBS time"):
         avg_time[r_idx] += float(split[3])
-      elif split[0].startswith("Modularity"):
+      elif split[0].startswith("Objective"):
         avg_obj[r_idx] = float(split[1])
       elif split[0].startswith("Avg precision"):
         precision[r_idx] = float(split[1])
@@ -20,8 +20,8 @@ def read_and_print(read_filename, num_rounds,avg_obj, avg_time, r_idx, precision
         recall[r_idx] = float(split[1])
 
 def main():
-  programs = ["ParallelModularityClusterer","ModularityClusterer"]
-  programs_pres = ["pm","m"]
+  programs = ["ParallelCorrelationClusterer","CorrelationClusterer"]
+  programs_pres = ["pc","c"]
   files = ["cancer_h","digits_h","iris_h", "letter_h","olivetti_h","wine_h"]
   pres = ["cancer","digits","iris","letter","olivetti","wine"]
   async_sync = ["true"]
@@ -29,10 +29,10 @@ def main():
   moves = ["NBHR_MOVE"]
   moves_pres = ["nbhr"]
   all_iter = ["false", "true"]
-  resolutions = [0.02 * ((1 + 1.0 / 5.0) ** x) for x in range(0, 101)]
+  resolutions = [x * (1.0/100.0) for x in range(1, 100)]
   num_workers = [60]#[1, 2, 4, 8, 16, 30, 60]
   read_dir = "/home/jeshi/snap/"
-  write_dir = "/home/jeshi/clustering_out_exp8_pr/"
+  write_dir = "/home/jeshi/clustering_out_exp8_weighted_pr/"
   length = len(resolutions)
   avg_num_clusters = [0]*length
   avg_obj = [0]*length
