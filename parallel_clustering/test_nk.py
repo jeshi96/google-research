@@ -50,7 +50,7 @@ def main():
     sys.stdout.write(filename + "\n")
     sys.stdout.flush()
     for r in res:
-      ss = ("python3 nk.py /home/jeshi/snap/" + filename + " /home/"
+      ss = ("python3.7 nk.py /home/jeshi/snap/" + filename + " /home/"
       "jeshi/out_nk/" + pre[idx] + "_" + r + "_nk " + r)
       out = shellGetOutput(ss)
       pair = format2(out)
