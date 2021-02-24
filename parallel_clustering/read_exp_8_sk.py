@@ -35,7 +35,7 @@ def main():
   resolutions = [0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
   nw = "60"
   read_dir = "/home/jeshi/snap/"
-  community = read_dir + "com-" + pres[file_idx] + ".top5000.cmty.txt"
+  community = read_dir + "com-" + pf + ".top5000.cmty.txt"
   write_dir = "/home/jeshi/clustering_out_exp8_weighted/"
   cluster_true = community_to_cluster_id(community)
   length = len(resolutions)
