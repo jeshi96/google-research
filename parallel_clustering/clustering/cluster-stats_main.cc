@@ -71,13 +71,13 @@ absl::Status GbbsGraphToInMemoryClustererGraph(InMemoryClusterer::Graph* graph,
   using weight_type = typename Graph::weight_type;
   for (std::size_t i = 0; i < gbbs_graph.n; i++) {
     auto vertex = gbbs_graph.get_vertex(i);
-    std::vector<std::pair<int32_t, double>> outgoing_edges(
+    std::vector<std::pair<gbbs::uintE, double>> outgoing_edges(
         vertex.getOutDegree());
     gbbs::uintE index = 0;
     auto add_outgoing_edge = [&](gbbs::uintE, const gbbs::uintE neighbor,
                                  weight_type wgh) {
       outgoing_edges[index] = std::make_pair(
-        static_cast<int32_t>(neighbor), DoubleFromWeight(wgh));
+        static_cast<gbbs::uintE>(neighbor), DoubleFromWeight(wgh));
       index++;
     };
     vertex.mapOutNgh(i, add_outgoing_edge, false);
