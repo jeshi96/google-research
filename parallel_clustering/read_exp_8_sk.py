@@ -12,7 +12,7 @@ def community_to_cluster_id(filename):
   idx = 0
   with open(filename) as fp:
     for line in fp:
-      keys = [x.strip() for x in line.split('\t')]
+      keys = [x.strip() for x in line.split(' ')]
       for x in keys:
         y = int(x)
         if y + 1 > arr.size:
