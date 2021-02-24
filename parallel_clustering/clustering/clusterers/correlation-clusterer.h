@@ -200,10 +200,11 @@ BestMovesForVertexSubset(
     // Mark in moved vertex adjacent vertices
     for (std::size_t i = 0; i < affected_vertices.size(); i++) {
       auto vtx = current_graph->get_vertex(affected_vertices[i]);
-      for (std::size_t j = 0; j < vtx.getOutDegree(); j++) {
-        auto nbhr = vtx.getOutNeighbor(j);
+      auto map_f = [&](gbbs::uintE u, gbbs::uintE nbhr, W weight) {
         affected_neighbors[nbhr] = true;
-      }
+
+      };
+      vtx.mapOutNgh(affected_vertices[i], map_f, false);
     }
     // translate affected neighbors to new_moved_subset
     for (std::size_t i = 0; i < affected_neighbors.size(); i++) {
