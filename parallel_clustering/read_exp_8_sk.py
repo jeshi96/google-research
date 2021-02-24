@@ -16,7 +16,7 @@ def community_to_cluster_id(filename):
       for x in keys:
         y = int(x)
         if y + 1 > arr.size:
-          np.resize(arr, (y + 1))
+          arr = np.resize(arr, (y + 1))
         arr[y] = idx
       idx += 1
   return arr
