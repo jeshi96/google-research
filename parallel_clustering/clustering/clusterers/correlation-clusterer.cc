@@ -91,19 +91,5 @@ absl::Status CorrelationClusterer::RefineClusters(
   return absl::OkStatus();
 }
 
-absl::StatusOr<InMemoryClusterer::Clustering> CorrelationClusterer::Cluster(
-    const ClustererConfig& clusterer_config) const {
-  InMemoryClusterer::Clustering clustering(graph_.Graph()->n);
-
-  // Create all-singletons initial clustering
-  for (std::size_t i = 0; i < graph_.Graph()->n; i++) {
-    clustering[i] = {static_cast<gbbs::uintE>(i)};
-  }
-
-  RETURN_IF_ERROR(RefineClusters(clusterer_config, &clustering));
-
-  return clustering;
-}
-
 }  // namespace in_memory
 }  // namespace research_graph
