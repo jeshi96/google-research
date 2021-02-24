@@ -236,9 +236,6 @@ absl::Status Main() {
   ClustererConfig config;
   std::string clusterer_config = absl::GetFlag(FLAGS_clusterer_config);
 
-  std::cout << "Config: " << clusterer_config << std::endl;
-  std::cout << "Name: " << clusterer_name << std::endl;
-
   if (!google::protobuf::TextFormat::ParseFromString(clusterer_config,
                                                      &config)) {
     return absl::InvalidArgumentError(
@@ -290,8 +287,7 @@ std::cout << "Num workers: " << pbbs::num_workers() << std::endl;
 std::cout << "Graph: " << input_file << std::endl;
   // Must initialize the list allocator for GBBS, to support parallelism.
   // The list allocator seeds using the number of vertices in the input graph.
-std::cout << "HERE: " << config.correlation_clusterer_config().async() << std::endl;
-  
+
 auto begin_cluster = std::chrono::steady_clock::now();
   InMemoryClusterer::Clustering clustering;
   ASSIGN_OR_RETURN(clustering, clusterer->Cluster(config));
