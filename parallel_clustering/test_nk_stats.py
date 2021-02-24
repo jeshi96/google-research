@@ -63,11 +63,13 @@ def outputs(modularities, precisions, recalls, num_comms, min_comms, max_comms, 
 # cluster time, total time, modularity, precision, recall, # comm,
 # min comm, max comm, avg comm
 def main():
-  files = ["amazon.edges","dblp.edges","lj.edges"] #,"orkut.edges"
-  pre = ["amazon", "dblp", "lj"] #, "orkut"
-  res_float_lj = [0.02 * ((1 + 1.0 / 5.0) ** x) for x in range(0, 90)]
-  res_lj = [str(x) for x in res_float_lj]
-  res_float = [0.02 * ((1 + 1.0 / 5.0) ** x) for x in range(0, 101)]
+  files = ["amazon.edges","dblp.edges","lj.edges","orkut.edges"]
+  pre = ["amazon", "dblp", "lj", "orkut"]
+  #res_float_lj = [0.02 * ((1 + 1.0 / 5.0) ** x) for x in range(0, 90)]
+  #res_lj = [str(x) for x in res_float_lj]
+  #res_float = [0.02 * ((1 + 1.0 / 5.0) ** x) for x in range(0, 101)]
+  #res = [str(x) for x in res_float]
+  res_float = [0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
   res = [str(x) for x in res_float]
   modularities = []
   precisions = []
@@ -79,11 +81,10 @@ def main():
   for idx, filename in enumerate(files):
     sys.stdout.write(filename + "\n")
     sys.stdout.flush()
-    use_res = res_lj if idx == 2 else res
-    for r in use_res:
+    for r in res:
       ss = ("bazel run //clustering:cluster-stats_main -- --"
       "input_graph=/home/jeshi/snap/" + filename + " --input_clusters="
-      "/home/jeshi/out/"+ pre[idx] +"_" + r + "_nk --clusterer_config='correlation_clusterer_config"
+      "/home/jeshi/out_nk/"+ pre[idx] +"_" + r + "_nk --clusterer_config='correlation_clusterer_config"
       " {resolution: " + r + "}' --input_communities"
       "='/home/jeshi/snap/com-" + pre[idx] + ".top5000.cmty.txt'")
       out = shellGetOutput(ss)
