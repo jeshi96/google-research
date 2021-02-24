@@ -25,7 +25,7 @@ def appendToFile(out, filename):
 def run_8_corr_weighted_pr():
   programs = ["ParallelCorrelationClusterer","CorrelationClusterer"]
   programs_pres = ["pc","c"]
-  files = ["cancer_50nn","digits_50nn","iris_50nn", "letter_50nn","olivetti_50nn","wine_50nn"]
+  files = ["cancer_wh","digits_wh","iris_wh", "letter_wh","olivetti_wh","wine_wh"]
   pres = ["cancer","digits","iris","letter","olivetti","wine"]
   async_sync = ["true"]
   refines = ["true"]
@@ -61,7 +61,7 @@ def run_8_corr_weighted_pr():
 def run_8_corr_weighted():
   programs = ["ParallelCorrelationClusterer","CorrelationClusterer"]
   programs_pres = ["pc","c"]
-  files = ["cancer_50nn","digits_50nn","iris_50nn", "letter_50nn","olivetti_50nn","wine_50nn"]
+  files = ["cancer_wh","digits_wh","iris_wh", "letter_wh","olivetti_wh","wine_wh"]
   pres = ["cancer","digits","iris","letter","olivetti","wine"]
   async_sync = ["true"]
   refines = ["true"]
@@ -97,7 +97,7 @@ def run_8_corr_weighted():
 def run_8_corr():
   programs = ["ParallelCorrelationClusterer","CorrelationClusterer"]
   programs_pres = ["pc","c"]
-  files = ["cancer_50nn","digits_50nn","iris_50nn", "letter_50nn","olivetti_50nn","wine_50nn"]
+  files = ["cancer_h","digits_h","iris_h", "letter_h","olivetti_h","wine_h"]
   pres = ["cancer","digits","iris","letter","olivetti","wine"]
   async_sync = ["true"]
   refines = ["true"]
@@ -133,7 +133,7 @@ def run_8_corr():
 def run_8_mod():
   programs = ["ParallelModularityClusterer","ModularityClusterer"]
   programs_pres = ["pm","m"]
-  files = ["cancer_50nn","digits_50nn","iris_50nn", "letter_50nn","olivetti_50nn","wine_50nn"]
+  files = ["cancer_h","digits_h","iris_h", "letter_h","olivetti_h","wine_h"]
   pres = ["cancer","digits","iris","letter","olivetti","wine"]
   async_sync = ["true"]
   refines = ["true"]
@@ -172,7 +172,7 @@ def run_8_mod():
 def run_8_corr_pr():
   programs = ["ParallelCorrelationClusterer","CorrelationClusterer"]
   programs_pres = ["pc","c"]
-  files = ["cancer_50nn","digits_50nn","iris_50nn", "letter_50nn","olivetti_50nn","wine_50nn"]
+  files = ["cancer_h","digits_h","iris_h", "letter_h","olivetti_h","wine_h"]
   pres = ["cancer","digits","iris","letter","olivetti","wine"]
   async_sync = ["true"]
   refines = ["true"]
@@ -208,7 +208,7 @@ def run_8_corr_pr():
 def run_8_mod_pr():
   programs = ["ParallelModularityClusterer","ModularityClusterer"]
   programs_pres = ["pm","m"]
-  files = ["cancer_50nn","digits_50nn","iris_50nn", "letter_50nn","olivetti_50nn","wine_50nn"]
+  files = ["cancer_h","digits_h","iris_h", "letter_h","olivetti_h","wine_h"]
   pres = ["cancer","digits","iris","letter","olivetti","wine"]
   async_sync = ["true"]
   refines = ["true"]
