@@ -14,9 +14,8 @@ def shellGetOutput(str) :
                              stderr=subprocess.PIPE)
   output, err = process.communicate()
   
-  
-  #if (len(err) > 0):
-  #    raise NameError(str+"\n"+output+err)
+  if (len(err) > 0):
+    print(str+"\n"+output+err)
   return output
 
 def format2(out):
