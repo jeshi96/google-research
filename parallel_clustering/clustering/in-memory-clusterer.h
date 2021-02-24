@@ -87,7 +87,7 @@ class InMemoryClusterer {
   // Note that the same clustering may have multiple representations, and the
   // function may return any of them.
   virtual absl::StatusOr<Clustering> Cluster(
-      const ClustererConfig& config) const = 0;
+      const ClustererConfig& config) const;
 
   // Refines a list of clusters and redirects the given pointer to new clusters.
   // This function is useful for methods that can refine / operate on an
