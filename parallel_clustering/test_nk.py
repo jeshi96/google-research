@@ -41,9 +41,9 @@ def outputs(count_times):
 # cluster time, total time, modularity, precision, recall, # comm,
 # min comm, max comm, avg comm
 def main():
-  files = ["amazon.edges","dblp.edges"] #,"lj.edges","orkut.edges"]
+  files = ["amazon.edges","dblp.edges","lj.edges","orkut.edges"]
   pre = ["amazon", "dblp", "lj", "orkut"]
-  res_float = [0.02 * ((1 + 1.0 / 5.0) ** x) for x in range(0, 101)]
+  res_float = [0.00001, 0.0001, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
   res = [str(x) for x in res_float]
   count_times = []
   for idx, filename in enumerate(files):
@@ -51,7 +51,7 @@ def main():
     sys.stdout.flush()
     for r in res:
       ss = ("python3 nk.py /home/jeshi/snap/" + filename + " /home/"
-      "jeshi/out/" + pre[idx] + "_" + r + "_nk_norefine " + r)
+      "jeshi/out_nk/" + pre[idx] + "_" + r + "_nk " + r)
       out = shellGetOutput(ss)
       pair = format2(out)
       count_times.append(pair)
