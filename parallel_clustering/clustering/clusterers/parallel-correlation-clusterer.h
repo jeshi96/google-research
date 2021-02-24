@@ -429,19 +429,7 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
   return RefineClusters_subroutine(clusterer_config, initial_clustering, empty, graph);
 }
 
-absl::StatusOr<InMemoryClusterer::Clustering>
-ParallelCorrelationClusterer::Cluster(
-    const ClustererConfig& clusterer_config) const {
-  InMemoryClusterer::Clustering clustering(graph_.Graph()->n);
-  // Create all-singletons initial clustering
-  pbbs::parallel_for(0, graph_.Graph()->n, [&](std::size_t i) {
-    clustering[i] = {static_cast<gbbs::uintE>(i)};
-  });
 
-  RETURN_IF_ERROR(RefineClusters(clusterer_config, &clustering));
-
-  return clustering;
-}
 
 
 }  // namespace in_memory
