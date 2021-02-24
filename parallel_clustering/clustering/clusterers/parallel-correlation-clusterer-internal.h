@@ -144,6 +144,7 @@ std::unique_ptr<bool[]> MoveNodesToCluster(
   const double offset = config.edge_weight_offset();
 
   auto deg = graph.get_vertex(moving_node).getOutDegree();
+  assert(deg < graph.n);
 
   if (deg <= 1000) {
 
