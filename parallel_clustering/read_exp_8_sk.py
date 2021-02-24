@@ -57,9 +57,9 @@ def main():
         aris[r_idx] = sklearn.metrics.adjusted_rand_score(cluster_true, cluster_here)
         accs[r_idx] = sklearn.metrics.accuracy_score(cluster_true, cluster_here)
       for r_idx, x in enumerate(resolutions):
-        print(str(x) + "\t"),
-        print(str(nmis[r_idx]) + "\t"),
-        print(str(aris[r_idx]) + "\t"),
+        print(str(x) ,end="\t")
+        print(str(nmis[r_idx]), end="\t")
+        print(str(aris[r_idx]) ,end="\t")
         print(str(accs[r_idx]))
 
 
