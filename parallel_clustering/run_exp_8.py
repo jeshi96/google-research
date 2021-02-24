@@ -54,7 +54,7 @@ def run_8_corr_weighted_pr():
                     " {resolution: " + str(r) + ", subclustering_method: NONE_SUBCLUSTERING, "
                     "clustering_moves_method: LOUVAIN , preclustering_method: NONE_PRECLUSTERING, "
                     "all_iter: "+ai+", refine: "+ref+", async: "+asy+", move_method: "+move+"}' --input_communities"
-                    "='" + read_dir + "com-" + pres[file_idx] + ".top5000.cmty.txt'"
+                    "='" + read_dir + "com-" + pres[file_idx] + ".top5000.cmty.txt'")
                     out = shellGetOutput(ss)
                     appendToFile(out, out_filename)
 
