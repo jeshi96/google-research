@@ -32,7 +32,7 @@ def main():
   resolutions = [x * (1.0/100.0) for x in range(1, 100)]
   num_workers = [60]#[1, 2, 4, 8, 16, 30, 60]
   read_dir = "/home/jeshi/snap/"
-  write_dir = "/home/jeshi/clustering_out_exp2/"
+  write_dir = "/home/jeshi/clustering_out_exp8_pr/"
   length = len(resolutions)
   avg_num_clusters = [0]*length
   avg_obj = [0]*length
