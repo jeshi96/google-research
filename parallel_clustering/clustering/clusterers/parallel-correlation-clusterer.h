@@ -147,19 +147,17 @@ BestMovesForVertexSubset(
   //auto moves_bool_shuffle = pbbs::random_shuffle(moves_bool.slice());
 
   // Find best moves per vertex in moved_subset
-  gbbs::sequence<bool> async_mark = gbbs::sequence<bool>(current_graph->n, false);
+  //gbbs::sequence<bool> async_mark = gbbs::sequence<bool>(current_graph->n, false);
   auto moved_clusters = absl::make_unique<bool[]>(current_graph->n);
   pbbs::parallel_for(0, current_graph->n,
                      [&](std::size_t i) { moved_clusters[i] = false; });
   gbbs::vertexMap(*moved_subset, [&](std::size_t i) {
   //for (std::size_t i = 0; i < current_graph->n; i++) {
-    if (async) {
       auto move = helper->AsyncMove(*current_graph, i);
       if (move) {
         pbbslib::CAS<bool>(&moved_clusters[helper->ClusterIds()[i]], false, true);
         moved_vertex[i] = 1;
       }
-    }
   });
 
   if (clusterer_config.correlation_clusterer_config().move_method() == CorrelationClustererConfig::ALL_MOVE) {
