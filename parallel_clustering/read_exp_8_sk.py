@@ -15,7 +15,7 @@ def community_to_cluster_id(filename):
       keys = [x.strip() for x in line.split('\t')]
       for x in keys:
         y = int(x)
-        if y + 1 > arr.size:
+        if y + 1 >= arr.size:
           np.resize(arr, (y + 1))
         arr[y] = idx
       idx += 1
