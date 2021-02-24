@@ -49,9 +49,6 @@ class ParallelModularityClusterer : public ParallelCorrelationClusterer {
   absl::StatusOr<Clustering> Cluster(
       const ClustererConfig& config) const override;
 
-  double ComputeModularity2(const ClustererConfig& clusterer_config, 
-    Clustering* initial_clustering);
-
   // initial_clustering must include every node in the range
   // [0, MutableGraph().NumNodes()) exactly once.
   absl::Status RefineClusters(const ClustererConfig& clusterer_config,
