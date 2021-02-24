@@ -131,7 +131,7 @@ absl::Status WriteClustering(const char* filename,
   return absl::OkStatus();
 }
 
-void split(const std::string &s, char delim, std::vector<int> &elems) {
+void split(const std::string &s, char delim, std::vector<gbbs::uintE> &elems) {
   std::stringstream ss;
   ss.str(s);
   std::string item;
@@ -141,14 +141,14 @@ void split(const std::string &s, char delim, std::vector<int> &elems) {
 }
 
 absl::Status ReadCommunities(const char* filename,
-  std::vector<std::vector<int>>& communities) {
+  std::vector<std::vector<gbbs::uintE>>& communities) {
   std::ifstream infile(filename);
   if (!infile.is_open()) {
     return absl::NotFoundError("Unable to open file.");
   }
   std::string line;
   while (std::getline(infile, line)) {
-    std::vector<int> row_values;
+    std::vector<gbbs::uintE> row_values;
     split(line, '\t', row_values);
     std::sort(row_values.begin(), row_values.end());
     communities.push_back(row_values);
@@ -157,7 +157,7 @@ absl::Status ReadCommunities(const char* filename,
 }
 
 absl::Status CompareCommunities(const char* filename, InMemoryClusterer::Clustering clustering) {
-  std::vector<std::vector<int>> communities;
+  std::vector<std::vector<gbbs::uintE>> communities;
   ReadCommunities(filename, communities);
   // precision = num correct results (matches b/w clustering and comm) / num returned results (in clustering)
   // recall = num correct results (matches b/w clustering and comm) / num relevant results (in comm)
@@ -169,7 +169,7 @@ absl::Status CompareCommunities(const char* filename, InMemoryClusterer::Cluster
   });
   pbbs::parallel_for(0, communities.size(), [&](std::size_t j) {
     auto community = communities[j];
-    std::vector<int> intersect(community.size());
+    std::vector<gbbs::uintE> intersect(community.size());
     std::size_t max_intersect = 0;
     std::size_t max_idx = 0;
     // Find the community in communities that has the greatest intersection with cluster
@@ -260,7 +260,7 @@ PrintTime(begin_read, end_read, "Read");
 //PrintTime(begin_cluster, end_cluster, "Cluster");
 
   std::string input_clusters = absl::GetFlag(FLAGS_input_clusters);
-  std::vector<std::vector<int>> clustering;
+  std::vector<std::vector<gbbs::uintE>> clustering;
   ReadCommunities(input_clusters.c_str(), clustering);
   double modularity = clusterer->ComputeModularity2(config, &clustering);
   std::cout << "Modularity: " << modularity << std::endl;
