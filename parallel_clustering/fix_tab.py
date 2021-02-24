@@ -8,7 +8,7 @@ def main():
   all_edges = []
   with open(filename) as fp:
     for line in fp:
-      edges = [x.strip() in line.split()]
+      edges = [x.strip() for x in line.split()]
       all_edges.append(edges)
   output_fp = sys.argv[2]
   with open(output_fp, 'w') as fp:
