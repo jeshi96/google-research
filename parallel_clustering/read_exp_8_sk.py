@@ -5,7 +5,7 @@ import tempfile
 import time
 import math
 
-import sklearn
+import sklearn.metrics
 
 def community_to_cluster_id(filename):
   arr = np.zeros(0)
