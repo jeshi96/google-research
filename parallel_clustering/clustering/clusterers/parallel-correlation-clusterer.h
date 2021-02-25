@@ -333,6 +333,7 @@ pbbs::timer t; t.start();
     pbbs::parallel_for(0, n, [&](std::size_t i) {
         local_cluster_ids[i] = helper->ClusterIds()[i];
     });
+    std::cout << "Begin compression" << std::endl; fflush(stdout);
     if (iter == 0) {
       ASSIGN_OR_RETURN(
           new_compressed_graph,
@@ -343,6 +344,7 @@ pbbs::timer t; t.start();
           new_compressed_graph,
           CompressGraph(*(compressed_graph.get()), local_cluster_ids, helper.get()));
     }
+    std::cout << "End compression" << std::endl; fflush(stdout);
       // Create new local clusters
       pbbs::parallel_for(0, new_compressed_graph.graph->n,
                          [&](std::size_t i) { local_cluster_ids[i] = i; });
