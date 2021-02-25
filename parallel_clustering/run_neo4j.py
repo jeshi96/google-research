@@ -5,13 +5,13 @@ from stellargraph.layer import GCN
 from stellargraph.mapper import ClusterNodeGenerator
 import tensorflow as tf
 import py2neo
-import os
 from sklearn import preprocessing, feature_extraction, model_selection
 import time
 
 import numpy as np
 import scipy.sparse as sps
 import pandas as pd
+import sys
 
 
 def main():
