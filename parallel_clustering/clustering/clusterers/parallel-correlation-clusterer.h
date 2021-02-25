@@ -337,7 +337,7 @@ pbbs::timer t; t.start();
       ASSIGN_OR_RETURN(
           new_compressed_graph,
           CompressGraph(*graph, local_cluster_ids, helper.get()));
-      graph->del();
+      //graph->del();
     } else {
       ASSIGN_OR_RETURN(
           new_compressed_graph,
