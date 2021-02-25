@@ -355,6 +355,7 @@ pbbs::timer t; t.start();
     } else*/
     if (new_compressed_graph.graph) new_compressed_graph.graph->del();
 
+    helper.reset();
     helper = absl::make_unique<ClusteringHelper>(
         compressed_graph->n, clusterer_config,
         new_compressed_graph.node_weights, new_clustering);
