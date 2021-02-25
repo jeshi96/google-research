@@ -674,6 +674,7 @@ std::tuple<ClusteringHelper::ClusterId, double> ClusteringHelper::EfficientBestM
   change_in_objective -= curr_together;
 
   auto together_after_entries = together_after_table.entries();
+  together_after_table.del();
   using M = std::tuple<ClusterId, double>;
   auto best_move_seq = gbbs::sequence<M>(together_after_entries.size());
 
