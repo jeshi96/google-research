@@ -239,6 +239,7 @@ absl::Status ParallelCorrelationClusterer::RefineClusters_subroutine(
     InMemoryClusterer::Clustering* initial_clustering,
     std::vector<double> node_weights,
     G* graph) const {
+auto graph_n = graph->n;
 pbbs::timer t; t.start();
       //std::cout << "REFINE" << std::endl;
       //fflush(stdout);
@@ -268,29 +269,29 @@ pbbs::timer t; t.start();
   }
 
   // Initialize refinement data structure
-  CorrelationClustererRefine refine{};
+  /*CorrelationClustererRefine refine{};
   if (config.refine()) {
     using H = std::unique_ptr<ClusteringHelper>;
     using GX = std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>;
     refine.recurse_helpers = gbbs::sequence<H>(num_iterations, [](std::size_t i){return H(nullptr);});
     refine.recurse_graphs = gbbs::sequence<GX>(num_iterations, [](std::size_t i){return GX(nullptr);});
-  }
+  }*/
 
   std::unique_ptr<gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>>
       compressed_graph;
 
   // Initialize clustering helper
   auto helper = node_weights.empty() ? absl::make_unique<ClusteringHelper>(
-      graph->n, clusterer_config, *initial_clustering) :
+      graph_n, clusterer_config, *initial_clustering) :
       absl::make_unique<ClusteringHelper>(
-      graph->n, clusterer_config, node_weights, *initial_clustering);
+      graph_n, clusterer_config, node_weights, *initial_clustering);
   // The max objective is the maximum objective given by the inner iterations
   // of best moves rounds
   //double max_objective = helper->ComputeObjective(*graph);
 
-  std::vector<gbbs::uintE> cluster_ids(graph->n);
-  std::vector<gbbs::uintE> local_cluster_ids(graph->n);
-  pbbs::parallel_for(0, graph->n, [&](std::size_t i) {
+  std::vector<gbbs::uintE> cluster_ids(graph_n);
+  std::vector<gbbs::uintE> local_cluster_ids(graph_n);
+  pbbs::parallel_for(0, graph_n, [&](std::size_t i) {
     cluster_ids[i] = i;
   });
 
@@ -316,11 +317,12 @@ pbbs::timer t; t.start();
     }
 
     // Compress cluster ids in initial_helper based on helper
-    if (!config.refine()) cluster_ids = FlattenClustering(cluster_ids, helper->ClusterIds());
-    else if (config.refine() && iter == num_iterations - 1) {
+    //if (!config.refine())
+    cluster_ids = FlattenClustering(cluster_ids, helper->ClusterIds());
+    /*else if (config.refine() && iter == num_iterations - 1) {
       refine.recurse_helpers[iter] = std::move(helper);
       refine.recurse_graphs[iter] = (iter == 0) ? nullptr : std::move(compressed_graph);
-    } 
+    } */
 
     if (iter == num_iterations - 1) break;
 
@@ -335,6 +337,7 @@ pbbs::timer t; t.start();
       ASSIGN_OR_RETURN(
           new_compressed_graph,
           CompressGraph(*graph, local_cluster_ids, helper.get()));
+      graph->del();
     } else {
       ASSIGN_OR_RETURN(
           new_compressed_graph,
@@ -346,10 +349,11 @@ pbbs::timer t; t.start();
     
 
     compressed_graph.swap(new_compressed_graph.graph);
-    if (config.refine()) {
+    /*if (config.refine()) {
       refine.recurse_helpers[iter] = std::move(helper);
       refine.recurse_graphs[iter] = std::move(new_compressed_graph.graph);
-    } else if (new_compressed_graph.graph) new_compressed_graph.graph->del();
+    } else*/
+    if (new_compressed_graph.graph) new_compressed_graph.graph->del();
 
     helper = absl::make_unique<ClusteringHelper>(
         compressed_graph->n, clusterer_config,
@@ -360,7 +364,7 @@ pbbs::timer t; t.start();
   }
 
   // Refine clusters up the stack
-  if (config.refine() && iter > 0) {
+  /*if (config.refine() && iter > 0) {
     auto get_clusters = [&](NodeId i) -> NodeId { return i; };
     for (int i = iter - 1; i >= 0; i--) {
       //gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph =
@@ -387,7 +391,7 @@ pbbs::timer t; t.start();
       }
     }
     cluster_ids = refine.recurse_helpers[0]->ClusterIds();
-  }
+  }*/
 
 t.stop(); t.reportTotal("Actual Cluster Time: ");
   std::cout << "Num outer: " << iter << std::endl;
@@ -401,9 +405,9 @@ t.stop(); t.reportTotal("Actual Cluster Time: ");
 
   // Hack to compute objective
   auto helper2 = node_weights.empty() ? absl::make_unique<ClusteringHelper>(
-      graph->n, clusterer_config, *initial_clustering) :
+      graph_n, clusterer_config, *initial_clustering) :
       absl::make_unique<ClusteringHelper>(
-      graph->n, clusterer_config, node_weights, *initial_clustering);
+      graph_n, clusterer_config, node_weights, *initial_clustering);
   // The max objective is the maximum objective given by the inner iterations
   // of best moves rounds
   double max_objective = helper2->ComputeObjective(*graph);
@@ -414,6 +418,8 @@ t.stop(); t.reportTotal("Actual Cluster Time: ");
   std::cout << "Disagreement Objective: " << std::setprecision(17) << max_disagreement_objective << std::endl;
 
   std::cout << "Number of Clusters: " << initial_clustering->size() << std::endl;
+
+  exit(0);
 
 
 
