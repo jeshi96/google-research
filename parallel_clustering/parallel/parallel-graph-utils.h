@@ -43,8 +43,19 @@ RetrieveInterClusterEdges(
   using W = typename Graph::weight_type;
   // First, compute offsets on the original graph
   std::vector<gbbs::uintE> all_offsets(original_graph.n + 1, gbbs::uintE{0});
-  pbbs::parallel_for(0, original_graph.n, [&](std::size_t i) {
-    all_offsets[i] = original_graph.get_vertex(i).getOutDegree();
+  pbbs::parallel_for(0, original_graph.n, [&](std::size_t j) {
+    auto vtx = original_graph.get_vertex(j);
+    gbbs::uintE x = 0;
+    if (cluster_ids[j] != UINT_E_MAX) {
+      auto map_f = [&](gbbs::uintE u, gbbs::uintE v, W w) {
+        if (is_valid_func(cluster_ids[v], cluster_ids[u]) &&
+            cluster_ids[v] != UINT_E_MAX 
+            && (v <= u || cluster_ids[v] != cluster_ids[u])
+            ) x++;
+      };
+      vtx.mapOutNgh(j, map_f, false);
+    }
+    all_offsets[j] = x;
   });
   std::pair<pbbs::sequence<gbbs::uintE>, gbbs::uintE> all_offsets_scan =
       research_graph::parallel::ScanAdd(absl::Span<const gbbs::uintE>(
@@ -70,10 +81,11 @@ RetrieveInterClusterEdges(
             // so if we want to match PLM, we have to subtract weight of
             // self loop from weight of supernode, and put this line back in.
             && (v <= u || cluster_ids[v] != cluster_ids[u])
-            )
+            ) {
           all_edges[all_offsets_scan.first[j] + i] =
               std::make_tuple(cluster_ids[u], cluster_ids[v], weight);
         i++;
+            }
       };
       vtx.mapOutNgh(j, map_f, false);
     }
