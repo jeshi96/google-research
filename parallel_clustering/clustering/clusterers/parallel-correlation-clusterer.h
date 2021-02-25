@@ -256,11 +256,11 @@ pbbs::timer t; t.start();
     case CorrelationClustererConfig::LOUVAIN:
       num_iterations = config.louvain_config().num_iterations() > 0
                            ? config.louvain_config().num_iterations()
-                           : 10;
+                           : 32;
       num_inner_iterations =
           config.louvain_config().num_inner_iterations() > 0
               ? config.louvain_config().num_inner_iterations()
-              : 10;
+              : 32;
       break;
     default:
       return absl::UnimplementedError(
