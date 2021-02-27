@@ -544,6 +544,10 @@ pbbs::timer t; t.start();
     cluster_ids[i] = i;
   });
 
+
+pbbs::timer t_move;
+pbbs::timer t_compress;
+pbbs::timer t_refine;
   int iter = 0;
   for (iter = 0; iter < num_iterations; ++iter) {
     gbbs::symmetric_ptr_graph<gbbs::symmetric_vertex, float>* current_graph =
@@ -554,8 +558,10 @@ pbbs::timer t; t.start();
 
     // Initialize subclustering data structure
     CorrelationClustererSubclustering subclustering(clusterer_config, current_graph);
+    t_move.start();
     bool moved = IterateBestMoves(num_inner_iterations, clusterer_config, current_graph,
       helper.get(), subclustering);
+    t_move.stop();
 
     // If no moves can be made at all, exit
     if (!moved) {
@@ -573,6 +579,7 @@ pbbs::timer t; t.start();
     if (iter == num_iterations - 1) break;
 
     // Compress graph
+    t_compress.start();
     GraphWithWeights new_compressed_graph;
     InMemoryClusterer::Clustering new_clustering{};
     pbbs::parallel_for(0, current_graph->n, [&](std::size_t i) {
@@ -600,11 +607,12 @@ pbbs::timer t; t.start();
     helper = absl::make_unique<ClusteringHelper>(
         compressed_graph->n, clusterer_config,
         new_compressed_graph.node_weights, new_clustering);
-
+    t_compress.stop();
     //double max_objective = helper->ComputeObjective(*compressed_graph.get());
     //std::cout << "Objective: " << max_objective << std::endl;
   }
 
+  t_refine.start();
   // Refine clusters up the stack
   if (config.refine() && iter > 0) {
     auto get_clusters = [&](NodeId i) -> NodeId { return i; };
@@ -638,8 +646,12 @@ pbbs::timer t; t.start();
     }
     cluster_ids = refine.recurse_helpers[0]->ClusterIds();
   }
+  t_refine.stop();
 
 t.stop(); t.reportTotal("Actual Cluster Time: ");
+t_move.reportTotal("Best Move Time: ");
+t_compress.reportTotal("Compress Time: ");
+t_refine.reportTotal("Refine Time: ");
   std::cout << "Num outer: " << iter << std::endl;
 
   if (compressed_graph) compressed_graph->del();
