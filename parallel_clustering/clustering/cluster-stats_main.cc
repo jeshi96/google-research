@@ -262,6 +262,8 @@ PrintTime(begin_read, end_read, "Read");
   std::string input_clusters = absl::GetFlag(FLAGS_input_clusters);
   std::vector<std::vector<gbbs::uintE>> clustering;
   ReadCommunities(input_clusters.c_str(), clustering);
+  double corr = clusterer->ComputeObjective2(config, &clustering);
+  std::cout << "Corr: " << corr << std::endl;
   double modularity = clusterer->ComputeModularity2(config, &clustering);
   std::cout << "Modularity: " << modularity << std::endl;
 

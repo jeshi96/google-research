@@ -120,6 +120,53 @@ double ParallelModularityClusterer::ComputeModularity2(const ClustererConfig& cl
   return modularity;
 }
 
+double ParallelModularityClusterer::ComputeObjective2(
+    const ClustererConfig& clusterer_config, 
+  InMemoryClusterer::Clustering* initial_clustering) {
+  auto n = graph_.Graph()->n;
+  const auto& config = clusterer_config.correlation_clusterer_config();
+  std::vector<double> shifted_edge_weight(n);
+
+  std::vector<gbbs::uintE> cluster_ids(n);
+  for (std::size_t i = 0; i < initial_clustering->size(); i++) {
+    for (std::size_t j = 0; j < ((*initial_clustering)[i]).size(); j++) {
+      cluster_ids[(*initial_clustering)[i][j]] = i;
+    }
+  }
+
+  std::vector<gbbs::uintE> cluster_weights(n);
+  for (std::size_t i = 0; i < n; i++) {
+    cluster_weights[cluster_ids[i]]++;
+  }
+
+  // Compute cluster statistics contributions of each vertex
+  pbbs::parallel_for(0, n, [&](std::size_t i) {
+    gbbs::uintE cluster_id_i = cluster_ids[i];
+    auto add_m = pbbslib::addm<double>();
+
+    auto intra_cluster_sum_map_f = [&](gbbs::uintE u, gbbs::uintE v,
+                                       float weight) -> double {
+      // This assumes that the graph is undirected, and self-loops are counted
+      // as half of the weight.
+      if (cluster_id_i == cluster_ids[v])
+        return (weight - config.edge_weight_offset()) / 2;
+      return 0;
+    };
+    shifted_edge_weight[i] = graph_.Graph()->get_vertex(i).reduceOutNgh<double>(
+        i, intra_cluster_sum_map_f, add_m);
+  });
+  double objective =
+      parallel::ReduceAdd(absl::Span<const double>(shifted_edge_weight));
+
+  auto resolution_seq = pbbs::delayed_seq<double>(n, [&](std::size_t i) {
+    auto cluster_weight = cluster_weights[cluster_ids[i]];
+    return 1 * (cluster_weight - 1);
+  });
+  objective -= config.resolution() * pbbslib::reduce_add(resolution_seq) / 2;
+
+  return objective;
+}
+
 absl::StatusOr<InMemoryClusterer::Clustering>
 ParallelModularityClusterer::Cluster(
     const ClustererConfig& clusterer_config) const {

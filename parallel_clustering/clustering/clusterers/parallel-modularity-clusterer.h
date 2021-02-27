@@ -55,6 +55,9 @@ class ParallelModularityClusterer : public ParallelCorrelationClusterer {
                               Clustering* initial_clustering) const override;
   
   double ComputeModularity2(const ClustererConfig& config, Clustering* initial_clustering);
+  double ComputeObjective2(
+    const ClustererConfig& clusterer_config, 
+  Clustering* initial_clustering);
 };
 
 }  // namespace in_memory
